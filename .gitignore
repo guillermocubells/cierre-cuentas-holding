@@ -1,0 +1,9 @@
+# Lo que genera cada usuario con SUS datos. Que no acabe aquí por accidente.
+*.pdf
+/salida/
+/mis-cuentas/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini

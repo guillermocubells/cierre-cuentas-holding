@@ -1,0 +1,5 @@
+# El repo guarda LF; cada quien recibe el final de linea de su sistema al clonar.
+# Sin esto el arbol nace mezclado: app.html, README.md y AVISO.md venian con CRLF
+# y las plantillas con LF, y cualquier edicion desde otro sistema ensucia el diff
+# entero en vez de las lineas que de verdad cambian.
+* text=auto

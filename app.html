@@ -1,0 +1,2718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cierre de cuentas anuales de una holding</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e4e4ef;
+    --text2: #8888a0;
+    --accent: #6c5ce7;
+    --accent2: #a29bfe;
+    --green: #00b894;
+    --red: #e17055;
+    --orange: #fdcb6e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  .sidebar {
+    width: 400px;
+    min-width: 400px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .sidebar-header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+  }
+
+  .sidebar-header p {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+
+  .sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px 32px;
+  }
+
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Nav: two-row horizontal */
+  .nav-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-phases {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 8px;
+  }
+
+  .phase-tab {
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  .phase-tab:hover { color: var(--text); }
+  .phase-tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+  .phase-tab .phase-num {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    margin-right: 6px;
+    background: var(--border);
+    color: var(--text2);
+    vertical-align: middle;
+  }
+
+  .phase-tab.active .phase-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .nav-spacer { flex: 1; }
+
+  .nav-export {
+    padding: 6px 14px;
+    margin: 6px 8px 6px 0;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .nav-export:hover { background: var(--accent2); }
+
+  .nav-docs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .doc-tab {
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .doc-tab:hover { border-color: var(--accent); color: var(--text); }
+  .doc-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .doc-download {
+    padding: 5px 8px;
+    font-size: 11px;
+    color: var(--green);
+    background: transparent;
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: -2px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  .doc-download:hover { background: var(--green); color: #fff; }
+
+  .doc-btn-group {
+    display: inline-flex;
+    align-items: stretch;
+  }
+
+  .doc-btn-group .doc-tab {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .socio-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  .socio-card .socio-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--red);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .socio-card .socio-remove:hover { background: rgba(225,112,85,0.15); }
+
+  .socio-card .form-group { margin-bottom: 8px; }
+  .socio-card .form-group:last-child { margin-bottom: 0; }
+
+  .btn {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+
+  .preview-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    background: var(--bg);
+  }
+
+  /* Form */
+  .form-section { margin-bottom: 20px; }
+
+  .form-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent2);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-group { margin-bottom: 12px; }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 4px;
+  }
+
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus { border-color: var(--accent); }
+  .form-group input.filled { border-color: var(--green); }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .form-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* Pista bajo un campo: para qué sirve y de dónde se saca el dato. */
+  .form-hint {
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+
+  /* Declaraciones que el usuario AFIRMA. Antes estaban escritas en los documentos
+     como hechos; ahora hay que marcarlas, y si no se marcan el párrafo no se emite. */
+  .form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .form-check input[type="checkbox"] {
+    width: auto;
+    margin-top: 2px;
+    flex: 0 0 auto;
+    accent-color: var(--accent);
+  }
+
+  .form-check label {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text);
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+
+  .form-check .form-hint { margin-top: 2px; }
+
+  /* Aviso de datos de ejemplo: tiene que verse antes de generar nada. */
+  .demo-banner {
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: #fff8f0;
+    border: 1px solid #f0d0a0;
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #8a5a00;
+  }
+
+  .demo-banner strong { color: #7a4e00; }
+
+  /* Párrafo de la memoria que sale de una declaración marcada por el usuario:
+     se marca en el documento para que se lea antes de firmar. */
+  .doc-page .declarado {
+    border-left: 3px solid #f0d0a0;
+    padding-left: 10px;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .progress-text {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 4px;
+    text-align: right;
+  }
+
+  .alert {
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .alert-warn {
+    background: rgba(253,203,110,0.1);
+    border: 1px solid rgba(253,203,110,0.3);
+    color: var(--orange);
+  }
+
+  .alert-ok {
+    background: rgba(0,184,148,0.1);
+    border: 1px solid rgba(0,184,148,0.3);
+    color: var(--green);
+  }
+
+  /* Document preview */
+  .doc-page {
+    background: #fff;
+    color: #1a1a2e;
+    max-width: 794px;
+    margin: 0 auto 32px;
+    padding: 60px 70px;
+    border-radius: 4px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .doc-page h1 {
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 4px;
+    color: #1a1a2e;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .doc-page h2 {
+    font-size: 15px;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    color: #1a1a2e;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+  }
+
+  .doc-page h3 {
+    font-size: 13px;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: #333;
+  }
+
+  .doc-page .doc-subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 24px;
+  }
+
+  .doc-page .doc-meta {
+    text-align: center;
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 32px;
+  }
+
+  .doc-page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 12px;
+  }
+
+  .doc-page th {
+    background: #f0f0f5;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid #ddd;
+    font-size: 11px;
+  }
+
+  .doc-page td {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+  }
+
+  .doc-page td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .doc-page .total td { font-weight: 700; background: #f8f8fc; }
+
+  .doc-page .signature { margin-top: 48px; padding-top: 16px; }
+  .doc-page .signature .line {
+    width: 250px;
+    border-bottom: 1px solid #333;
+    margin-top: 48px;
+    margin-bottom: 4px;
+  }
+  .doc-page .signature .name { font-weight: 600; }
+
+  .doc-page .placeholder {
+    background: #fff3cd;
+    color: #856404;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 11px;
+  }
+
+  .doc-page .certifica {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin: 24px 0;
+  }
+
+  .doc-page p { margin-bottom: 10px; text-align: justify; }
+  .doc-page .acuerdo { font-weight: 700; margin-top: 20px; }
+
+  .hidden { display: none !important; }
+
+  /* Checklist */
+  .checklist { margin-top: 16px; }
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .checklist-item:hover { color: var(--text); }
+  .checklist-item.done { color: var(--green); text-decoration: line-through; }
+  .checklist-item .icon { font-size: 16px; }
+
+  /* Balance check */
+  .balance-check {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  .balance-ok { background: rgba(0,184,148,0.15); color: var(--green); }
+  .balance-err { background: rgba(225,112,85,0.15); color: var(--red); }
+
+  /* Print A4 */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+    @top-left { content: none; }
+    @top-right { content: none; }
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+    @top-center { content: none; }
+    @bottom-center { content: none; }
+  }
+
+  @media print {
+    body { background: #fff; margin: 0; padding: 0; }
+    .sidebar, .nav-bar { display: none !important; }
+    .app { display: block; }
+    .main { overflow: visible; display: block; }
+    .preview-area { padding: 0; background: #fff; overflow: visible; }
+    .doc-page {
+      box-shadow: none;
+      margin: 0;
+      padding: 10mm 12mm;
+      page-break-after: always;
+      border: none;
+      max-width: 100%;
+      width: 100%;
+      font-size: 11.5px;
+      line-height: 1.55;
+    }
+    .doc-page:last-child { page-break-after: auto; }
+    .doc-page h1 { font-size: 15px; margin-bottom: 2px; }
+    .doc-page h2 { font-size: 13px; margin-top: 18px; margin-bottom: 8px; }
+    .doc-page h3 { font-size: 11.5px; margin-top: 12px; margin-bottom: 6px; }
+    .doc-page .doc-subtitle { margin-bottom: 12px; font-size: 12px; }
+    .doc-page .doc-meta { margin-bottom: 18px; font-size: 10px; }
+    .doc-page p { margin-bottom: 6px; font-size: 11px; }
+    .doc-page table { font-size: 10px; margin: 8px 0; }
+    .doc-page th { padding: 5px 6px; }
+    .doc-page td { padding: 4px 6px; }
+    .doc-page .signature { margin-top: 30px; }
+    .doc-page .signature .line { margin-top: 30px; }
+    .doc-page .hidden { display: none !important; }
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1 id="sidebarTitulo">CUENTAS ANUALES</h1>
+      <p id="sidebarIdent">&mdash;</p>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 0 campos</div>
+    </div>
+    <div class="sidebar-body">
+
+      <div class="alert alert-warn" id="alertMissing">
+        Completa los campos resaltados para generar los documentos
+      </div>
+      <div class="alert alert-ok hidden" id="alertReady">
+        Todos los campos completados &mdash; documentos listos para imprimir
+      </div>
+
+      <!-- Datos holding -->
+      <div class="form-section">
+        <div class="form-section-title">Datos de la Holding (de la escritura)</div>
+        <div class="form-group">
+          <label>Denominación social</label>
+          <input type="text" id="f_denominacion" value="EJEMPLO HOLDING SL" data-required>
+        </div>
+        <div class="form-group">
+          <label>CIF</label>
+          <input type="text" id="f_cif" value="B00000000" data-required>
+        </div>
+        <div class="form-group">
+          <label>Domicilio social</label>
+          <input type="text" id="f_domicilio" value="Calle Ejemplo 1, 46001 Valencia" data-required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Capital social (EUR)</label>
+            <input type="text" id="f_capital" value="3.000,00" data-required>
+          </div>
+          <div class="form-group">
+            <label>Num. participaciones</label>
+            <input type="text" id="f_num_part" value="3.000" data-required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Valor nominal por participaci&oacute;n (EUR)</label>
+          <input type="text" id="f_valor_nominal" value="1,00" data-required>
+        </div>
+        <div class="form-group">
+          <label>Fecha de constituci&oacute;n</label>
+          <input type="text" id="f_fecha_const" value="15 de enero de 2025" data-required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ciudad</label>
+            <input type="text" id="f_ciudad" value="Valencia" data-required>
+          </div>
+          <div class="form-group">
+            <label>Provincia (Registro Mercantil)</label>
+            <input type="text" id="f_provincia" value="Valencia" data-required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>CNAE</label>
+          <input type="text" id="f_cnae" value="6421 - Actividades de las sociedades holding" data-required>
+          <div class="form-hint">
+            <strong>6421 es el c&oacute;digo de la CNAE-2025</strong>, y es el que hay que poner en una
+            presentaci&oacute;n hecha en 2026. El viejo <strong>6420</strong> (CNAE-2009) ha sido
+            eliminado tanto del modelo 200 como de los modelos de dep&oacute;sito de cuentas: si lo
+            encuentras en una gu&iacute;a antigua, est&aacute; caducado.
+          </div>
+        </div>
+      </div>
+
+      <!-- Ejercicio que se cierra: de aqui salen todos los plazos -->
+      <div class="form-section">
+        <div class="form-section-title">Ejercicio que cierras</div>
+        <div class="form-group">
+          <label>Fecha de cierre del ejercicio</label>
+          <input type="date" id="f_fecha_cierre_iso" value="2025-12-31" data-required>
+          <div class="form-hint">
+            De este campo salen <strong>todos</strong> los plazos de la hoja de ruta. Si tu ejercicio
+            social no termina el 31 de diciembre, c&aacute;mbialo y el calendario entero se recalcula.
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ejercicio</label>
+            <input type="text" id="f_ejercicio" value="2025" data-required>
+            <div class="form-hint">C&oacute;mo se titulan los documentos.</div>
+          </div>
+          <div class="form-group">
+            <label>Cierre, en letra</label>
+            <input type="text" id="f_fecha_cierre" value="31 de diciembre de 2025" data-required>
+            <div class="form-hint">Como aparece dentro del texto.</div>
+          </div>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="f_primer_ejercicio" checked onchange="render(); updateProgress();">
+          <div>
+            <label for="f_primer_ejercicio">Es el <strong>primer ejercicio</strong> de la sociedad</label>
+            <div class="form-hint">
+              Si lo marcas, la memoria dir&aacute; que no hay cifras comparativas del ejercicio anterior.
+              <strong>Desm&aacute;rcalo a partir del segundo ejercicio:</strong> si no, depositas unas
+              cuentas sin comparativas afirmando que es tu primer a&ntilde;o, y eso el Registro lo puede
+              reparar. Ojo: estos documentos no traen columna de ejercicio anterior, as&iacute; que si la
+              desmarcas tendr&aacute;s que a&ntilde;adir t&uacute; las cifras comparativas.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tipo sociedad -->
+      <div class="form-section">
+        <div class="form-section-title">Tipo de sociedad</div>
+        <div class="form-group">
+          <label>Representaci&oacute;n</label>
+          <select id="f_tipo_soc" onchange="toggleSocios(); render(); updateProgress();">
+            <option value="unipersonal" selected>Unipersonal (socio &uacute;nico)</option>
+            <option value="pluripersonal">Pluripersonal (varios socios)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Administrador -->
+      <div class="form-section">
+        <div class="form-section-title">Administrador</div>
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" id="f_admin" value="NOMBRE APELLIDO APELLIDO" data-required>
+        </div>
+        <div class="form-group">
+          <label>DNI</label>
+          <input type="text" id="f_admin_dni" value="00000000T" data-required>
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="f_cargo" value="Administrador Único" data-required>
+        </div>
+        <div class="form-group">
+          <label>Domicilio del administrador</label>
+          <input type="text" id="f_admin_dom" value="Calle Ejemplo 2, 46002 Valencia">
+        </div>
+      </div>
+
+      <!-- Socio unico (visible por defecto) -->
+      <div class="form-section" id="seccion_socio_unico">
+        <div class="form-section-title">Socio &uacute;nico</div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:8px">Mismos datos que el administrador (se autocompletan)</p>
+      </div>
+
+      <!-- Socios (oculto por defecto) -->
+      <div class="form-section hidden" id="seccion_socios">
+        <div class="form-section-title">Socios</div>
+        <div id="socios_list"></div>
+        <button class="btn btn-primary" style="margin-top:8px;font-size:11px;padding:5px 12px" onclick="addSocio()">+ A&ntilde;adir socio</button>
+      </div>
+
+      <!-- Filial -->
+      <div class="form-section">
+        <div class="form-section-title">Participacion en filial</div>
+        <div class="form-group">
+          <label>Nombre de la filial</label>
+          <input type="text" id="f_filial" value="EJEMPLO FILIAL SL" data-required>
+        </div>
+        <div class="form-group">
+          <label>CIF de la filial</label>
+          <input type="text" id="f_filial_cif" value="B00000001" data-required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>% participaci&oacute;n</label>
+            <input type="text" id="f_porcentaje" value="100,00" data-required>
+          </div>
+          <div class="form-group">
+            <label>Coste adquisici&oacute;n (EUR)</label>
+            <input type="text" id="f_valor_part" value="2.900,00" data-required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Num. participaciones de la filial que posee</label>
+          <input type="text" id="f_part_filial" value="2.900">
+        </div>
+      </div>
+
+      <!-- Tesorería -->
+      <div class="form-section">
+        <div class="form-section-title">Tesorería</div>
+        <div class="form-group">
+          <label>Saldo de la cuenta bancaria al cierre (EUR)</label>
+          <input type="text" id="f_saldo" value="100,00" data-required>
+        </div>
+        <div class="balance-check" id="balanceCheck"></div>
+      </div>
+
+      <!-- Datos registrales -->
+      <div class="form-section">
+        <div class="form-section-title">Datos registrales</div>
+        <div class="form-group">
+          <label>Notario</label>
+          <input type="text" id="f_notario" value="NOMBRE DEL NOTARIO">
+        </div>
+        <div class="form-group">
+          <label>Numero de protocolo</label>
+          <input type="text" id="f_protocolo" value="0000">
+        </div>
+        <div class="form-group">
+          <label>Hoja del Registro Mercantil</label>
+          <input type="text" id="f_hoja" value="M-000000">
+        </div>
+        <div class="form-group">
+          <label>IRUS</label>
+          <input type="text" id="f_irus" value="0000000000000">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tomo</label>
+            <input type="text" id="f_tomo" placeholder="(de la escritura)">
+          </div>
+          <div class="form-group">
+            <label>Folio</label>
+            <input type="text" id="f_folio" placeholder="(de la escritura)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Declaraciones. Antes iban escritas en los documentos como hechos. -->
+      <div class="form-section">
+        <div class="form-section-title">Lo que vas a declarar</div>
+        <div class="form-hint" style="margin-bottom:12px">
+          Cada casilla de aqu&iacute; es una <strong>afirmaci&oacute;n que firmas</strong>. Si no la
+          marcas, el p&aacute;rrafo correspondiente no se escribe en el documento. Ninguna viene
+          marcada por defecto si afirma algo sobre tu situaci&oacute;n fiscal o de auditor&iacute;a:
+          eso lo decides t&uacute;, no esta herramienta.
+        </div>
+
+        <div class="form-group">
+          <label>Resultado del ejercicio (EUR)</label>
+          <input type="text" id="f_resultado" value="0,00">
+          <div class="form-hint">
+            En negativo si has tenido p&eacute;rdidas: <code>-1.250,00</code>. El caso que m&aacute;s
+            gente da por cero y no lo es: <strong>si contabilizaste en la sociedad la factura de la
+            notar&iacute;a y del registro, tu resultado es negativo</strong> y tienes un pasivo.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Otros pasivos a cierre (EUR)</label>
+          <input type="text" id="f_pasivo" value="0,00">
+          <div class="form-hint">Deudas pendientes: acreedores, pr&eacute;stamo del socio, factura sin pagar.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Tu participada es&hellip;</label>
+          <select id="f_califica_filial" onchange="render(); updateProgress();">
+            <option value="grupo" selected>Empresa del GRUPO (la controlas)</option>
+            <option value="asociada">Empresa ASOCIADA (influencia significativa, sin control)</option>
+          </select>
+          <div class="form-hint">
+            Cambia los ep&iacute;grafes de la memoria y la cuenta contable del Libro Diario. Si
+            controlas tu filial &mdash;el caso normal de una holding de fundador&mdash; es
+            <strong>grupo</strong>, no asociada. Y si es grupo, eres cabecera de un grupo:
+            <strong>preg&uacute;ntale a tu asesor si te toca consolidar</strong>. Esta herramienta no lo
+            comprueba.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo del Impuesto sobre Sociedades (%)</label>
+          <input type="text" id="f_tipo_is" value="25">
+          <div class="form-hint">
+            <strong>No pongas 15 sin comprobarlo.</strong> El tipo reducido de entidades de nueva
+            creaci&oacute;n exige que la entidad <em>realice actividades econ&oacute;micas</em>, excluye a
+            las entidades patrimoniales y excluye expresamente a las que forman parte de un grupo del
+            art. 42 del C&oacute;digo de Comercio. Una holding que controla una filial encaja en esas
+            exclusiones por tres v&iacute;as a la vez. Verif&iacute;calo con tu asesor.
+          </div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="f_exento_auditoria" onchange="render(); updateProgress();">
+          <div>
+            <label for="f_exento_auditoria">
+              Declaro que la sociedad <strong>no est&aacute; obligada a auditar</strong> sus cuentas
+            </label>
+            <div class="form-hint">
+              Esto se certifica <strong>ante el Registro Mercantil</strong>, y esta herramienta no
+              comprueba nada: no te pregunta activo, cifra de negocios ni empleados. Los umbrales del
+              art. 263 LSC no son el &uacute;nico filtro: tambi&eacute;n obliga la petici&oacute;n de la
+              minor&iacute;a del 5%, una auditor&iacute;a voluntaria con auditor inscrito, el pacto con
+              inversores o la normativa de subvenciones. Si no lo has comprobado, deja la casilla sin
+              marcar y el p&aacute;rrafo no se emitir&aacute;.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="f_micro" onchange="render(); updateProgress();">
+          <div>
+            <label for="f_micro">
+              Declaro que cumple los criterios para <strong>no formular ECPN ni EFE</strong>
+            </label>
+            <div class="form-hint">
+              Si lo marcas, la memoria justificar&aacute; por qu&eacute; no incluye el Estado de Cambios
+              en el Patrimonio Neto ni el Estado de Flujos de Efectivo. Compru&eacute;balo antes:
+              omitir dos estados que s&iacute; te tocan es un defecto del dep&oacute;sito.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="f_aport_no_dineraria" onchange="render(); updateProgress();">
+          <div>
+            <label for="f_aport_no_dineraria">
+              La holding se constituy&oacute; por <strong>aportaci&oacute;n no dineraria</strong> de
+              participaciones
+            </label>
+            <div class="form-hint">
+              D&eacute;jala sin marcar si aportaste dinero. Si la marcas, la memoria describir&aacute; un
+              canje de participaciones y mencionar&aacute; el r&eacute;gimen fiscal especial: no firmes
+              eso si no hiciste la comunicaci&oacute;n que ese r&eacute;gimen exige.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fechas -->
+      <div class="form-section">
+        <div class="form-section-title">Fechas de tramitación</div>
+        <div class="form-group">
+          <label>Fecha de formulaci&oacute;n de cuentas</label>
+          <input type="date" id="f_fecha_form" value="2026-03-31" data-required>
+        </div>
+        <div class="form-group">
+          <label>Fecha de la junta / decision socio &uacute;nico</label>
+          <input type="date" id="f_fecha_junta" value="2026-06-30" data-required>
+          <div class="form-hint">
+            De aqu&iacute; sale el plazo de dep&oacute;sito: un mes desde esta fecha, no desde el
+            &uacute;ltimo d&iacute;a que ten&iacute;as para aprobar.
+          </div>
+        </div>
+      </div>
+
+      <!-- Checklist completa -->
+      <div class="form-section">
+        <div class="form-section-title">Progreso general</div>
+        <div class="checklist" id="mainChecklist"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="nav-bar">
+      <div class="nav-phases">
+        <div class="phase-tab active" data-phase="ruta"><span class="phase-num">&bull;</span>Hoja de Ruta</div>
+        <div class="phase-tab" data-phase="f1"><span class="phase-num">1</span>Fase 1 - Formular Cuentas</div>
+        <div class="phase-tab" data-phase="f2"><span class="phase-num">2</span>Fase 2 - Socio &Uacute;nico</div>
+        <div class="phase-tab" data-phase="f3"><span class="phase-num">3</span>Fase 3 - Legalizar Libros</div>
+        <div class="phase-tab" data-phase="f4"><span class="phase-num">4</span>Fase 4 - Dep&oacute;sito RM</div>
+        <div class="phase-tab" data-phase="f5"><span class="phase-num">5</span>Fase 5 - Modelo 200</div>
+        <div class="phase-tab" data-phase="f6"><span class="phase-num">6</span>Fase 6 - Archivo</div>
+        <div class="nav-spacer"></div>
+        <button class="nav-export" onclick="printDoc()">Exportar PDF</button>
+      </div>
+      <div class="nav-docs" id="navDocs">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <div class="preview-area" id="previewArea">
+      <div class="doc-page" id="doc-ruta"></div>
+      <div class="doc-page hidden" id="doc-cuentas"></div>
+      <div class="doc-page hidden" id="doc-cert-form"></div>
+      <div class="doc-page hidden" id="doc-acta"></div>
+      <div class="doc-page hidden" id="doc-libro-diario"></div>
+      <div class="doc-page hidden" id="doc-libro-inventarios"></div>
+      <div class="doc-page hidden" id="doc-libro-actas"></div>
+      <div class="doc-page hidden" id="doc-libro-socios"></div>
+      <div class="doc-page hidden" id="doc-cert-acuerdos"></div>
+      <div class="doc-page hidden" id="doc-modelo200"></div>
+      <div class="doc-page hidden" id="doc-archivo"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fields = {};
+// .form-check tiene que estar en el selector: las casillas de declaracion viven ahi,
+// y si no se indexan v()/chk() devuelven vacio y los parrafos no se emiten nunca.
+document.querySelectorAll('.form-group input, .form-group select, .form-check input').forEach(el => {
+  fields[el.id] = el;
+  el.addEventListener('input', () => { render(); updateProgress(); checkBalance(); });
+  el.addEventListener('change', () => { render(); updateProgress(); checkBalance(); });
+});
+
+// --- Socios management ---
+let socios = [];
+
+function isUnipersonal() {
+  const sel = document.getElementById('f_tipo_soc');
+  return sel ? sel.value === 'unipersonal' : true;
+}
+
+function toggleSocios() {
+  const uni = isUnipersonal();
+  document.getElementById('seccion_socio_unico').classList.toggle('hidden', !uni);
+  document.getElementById('seccion_socios').classList.toggle('hidden', uni);
+  // Update Fase 2 label
+  const f2tab = document.querySelector('[data-phase="f2"]');
+  if (f2tab) {
+    f2tab.innerHTML = uni
+      ? '<span class="phase-num">2</span>Fase 2 - Socio \u00danico'
+      : '<span class="phase-num">2</span>Fase 2 - Junta General';
+  }
+  // Update doc tab label in phaseMap
+  phaseMap.f2 = uni
+    ? [{ id: 'acta', label: 'Acta Socio \u00danico' }]
+    : [{ id: 'acta', label: 'Acta Junta General' }];
+  if (!uni && socios.length === 0) {
+    addSocio();
+  }
+  renderSociosList();
+}
+
+function addSocio() {
+  socios.push({ nombre: '', dni: '', domicilio: '', participaciones: '', porcentaje: '' });
+  renderSociosList();
+}
+
+function removeSocio(idx) {
+  socios.splice(idx, 1);
+  renderSociosList();
+  render();
+}
+
+function updateSocio(idx, field, value) {
+  socios[idx][field] = value;
+  render();
+}
+
+function renderSociosList() {
+  const container = document.getElementById('socios_list');
+  if (!container) return;
+  container.innerHTML = socios.map((s, i) => `
+    <div class="socio-card">
+      <button class="socio-remove" onclick="removeSocio(${i})">&times;</button>
+      <div style="font-size:11px;color:var(--accent2);margin-bottom:8px;font-weight:600">Socio ${i + 1}</div>
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" value="${s.nombre}" placeholder="Nombre y apellidos" oninput="updateSocio(${i},'nombre',this.value)">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>DNI</label>
+          <input type="text" value="${s.dni}" placeholder="12345678A" oninput="updateSocio(${i},'dni',this.value)">
+        </div>
+        <div class="form-group">
+          <label>Participaciones</label>
+          <input type="text" value="${s.participaciones}" placeholder="5.000" oninput="updateSocio(${i},'participaciones',this.value)">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>% Capital</label>
+          <input type="text" value="${s.porcentaje}" placeholder="50%" oninput="updateSocio(${i},'porcentaje',this.value)">
+        </div>
+        <div class="form-group">
+          <label>Domicilio</label>
+          <input type="text" value="${s.domicilio}" placeholder="Calle, CP, Ciudad" oninput="updateSocio(${i},'domicilio',this.value)">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getSociosTableHTML() {
+  if (isUnipersonal()) {
+    return `<tr><td>${vOr('f_admin','ADMINISTRADOR')}</td><td>${vOr('f_admin_dni','DNI')}</td><td>${vOr('f_num_part','NUM')}</td><td>100,00%</td></tr>`;
+  }
+  return socios.map(s =>
+    `<tr><td>${s.nombre || '[NOMBRE]'}</td><td>${s.dni || '[DNI]'}</td><td>${s.participaciones || '[NUM]'}</td><td>${s.porcentaje || '[%]'}</td></tr>`
+  ).join('');
+}
+
+function getSociosNamesText() {
+  if (isUnipersonal()) return vOr('f_admin','ADMINISTRADOR');
+  return socios.map(s => s.nombre || '[NOMBRE]').join(', ');
+}
+
+function v(id) {
+  const el = fields[id];
+  return el ? el.value.trim() : '';
+}
+
+function vOr(id, label) {
+  const val = v(id);
+  return val || `<span class="placeholder">[${label}]</span>`;
+}
+
+// Lee una casilla de declaracion. No vale v(): el .value de un checkbox es "on"
+// independientemente de si esta marcado.
+function chk(id) {
+  const el = fields[id];
+  return !!(el && el.checked);
+}
+
+// Rellena los marcadores {{...}} del texto de los pasos de la hoja de ruta.
+// Hace falta porque `steps` es un array de cadenas con comillas simples, evaluado una
+// sola vez al cargar: ahi un ${...} no interpola nada. Los marcadores se resuelven en
+// cada repintado, asi que los pasos siguen tus datos.
+function fill(texto) {
+  if (!texto) return texto;
+  const mapa = {
+    '{{DEN}}':          v('f_denominacion')  || '[DENOMINACION]',
+    '{{CIF}}':          v('f_cif')           || '[CIF]',
+    '{{ADMIN}}':        v('f_admin')         || '[ADMINISTRADOR]',
+    '{{DNI}}':          v('f_admin_dni')     || '[DNI]',
+    '{{CARGO}}':        v('f_cargo')         || '[CARGO]',
+    '{{FILIAL}}':       v('f_filial')        || '[FILIAL]',
+    '{{FILIAL_CIF}}':   v('f_filial_cif')    || '[CIF FILIAL]',
+    '{{EJERCICIO}}':    v('f_ejercicio')     || '[EJERCICIO]',
+    '{{FECHA_CIERRE}}': v('f_fecha_cierre')  || '[FECHA DE CIERRE]',
+    '{{FECHA_CONST}}':  v('f_fecha_const')   || '[FECHA DE CONSTITUCION]',
+    '{{NUM_PART}}':     v('f_num_part')      || '[N. PARTICIPACIONES]',
+    '{{CAPITAL}}':      v('f_capital')       || '[CAPITAL]',
+    '{{PART_FILIAL}}':  v('f_part_filial')   || '[PARTICIPACIONES FILIAL]',
+    '{{VALOR_PART}}':   v('f_valor_part')    || '[VALOR PARTICIPACIONES]',
+    '{{PORCENTAJE}}':   v('f_porcentaje')    || '[%]',
+    '{{SALDO}}':        v('f_saldo')         || '[SALDO]',
+    '{{HOJA}}':         v('f_hoja')          || '[HOJA]',
+    '{{PROVINCIA}}':    v('f_provincia')     || '[PROVINCIA]',
+    '{{CIUDAD}}':       v('f_ciudad')        || '[CIUDAD]',
+    '{{CNAE}}':         v('f_cnae')          || '[CNAE]',
+    '{{TIPO_IS}}':      v('f_tipo_is')       || '[TIPO IS]',
+    '{{FECHA_JUNTA}}':    fmtFechaISO('f_fecha_junta'),
+    '{{PLAZO_FORMULAR}}': fmtFecha(plazoFormular()),
+    '{{PLAZO_LIBROS}}':   fmtFecha(plazoLibros()),
+    '{{PLAZO_JUNTA}}':    fmtFecha(plazoJunta()),
+    '{{PLAZO_DEPOSITO}}': fmtFecha(plazoDeposito()),
+    '{{PLAZO_M200}}':     fmtFecha(plazoM200()),
+    '{{GRUPO_O_ASOC}}':   esGrupo() ? 'del grupo' : 'asociada',
+    '{{CUENTA_PART}}':    cuentaParticipaciones(),
+    '{{AVISO_GRUPO}}':    avisoGrupo(),
+  };
+  let out = texto;
+  for (const k in mapa) out = out.split(k).join(mapa[k]);
+  return out;
+}
+
+function fmtFechaISO(id) {
+  const d = parseFechaInput(id);
+  return d ? d.toLocaleDateString('es-ES') : '[FECHA]';
+}
+
+// Caso base: holding que controla su filial -> empresa DEL GRUPO.
+function esGrupo() {
+  return v('f_califica_filial') !== 'asociada';
+}
+
+// Cuenta del cuadro de cuentas del PGC para la participacion a largo plazo.
+// Subgrupo 24 "Inversiones financieras a largo plazo en partes vinculadas",
+// cuenta 240 "Participaciones a largo plazo en partes vinculadas":
+//   2403  empresas del grupo
+//   2404  empresas asociadas
+//   2405  otras partes vinculadas
+// El deterioro, si lo hubiera, NO va aqui: va al subgrupo 29, cuenta
+// 293 "Deterioro de valor de participaciones a largo plazo" -> 2933 grupo / 2934 asociadas.
+// Y cuidado con la 2493: NO es una cuenta de participaciones ni de deterioro, es
+// "Desembolsos pendientes sobre participaciones a largo plazo en empresas del grupo",
+// es acreedora y minora el activo. En una SL espanola no deberia aparecer, porque las
+// participaciones tienen que estar integramente desembolsadas (art. 78 LSC).
+// El ejercicio y la fecha de cierre estaban escritos como texto fijo en decenas de
+// sitios, sin ningun campo que los cambiara. Estos cuatro auxiliares son los que
+// permiten que el sistema sirva para cualquier ejercicio y para cualquier fecha de
+// cierre, no solo para un 31 de diciembre.
+function ejercicioTxt()  { return v('f_ejercicio') || '[EJERCICIO]'; }
+function cierreTxt()     { return v('f_fecha_cierre') || '[FECHA DE CIERRE]'; }
+function cierreMayus()   { return cierreTxt().toUpperCase(); }
+function cierreCorto() {
+  const d = parseFechaInput('f_fecha_cierre_iso');
+  return d ? d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+           : '[dd/mm/aaaa]';
+}
+
+// Solo se afirma "primer ejercicio" si el usuario lo ha marcado.
+function textoComparativas() {
+  return chk('f_primer_ejercicio')
+    ? ' Al tratarse del primer ejercicio social, no se presentan cifras comparativas del ejercicio anterior.'
+    : ' <span class="declarado">Revisa este apartado: no es tu primer ejercicio, asi que estas cuentas deben incluir ' +
+      'las cifras comparativas del ejercicio anterior, y estas tablas no traen columna para ellas. ' +
+      'Tienes que anadirlas antes de depositar.</span>';
+}
+
+// El concepto del asiento de constitucion. La version de partida describia un canje de
+// participaciones y citaba el regimen fiscal especial de aportaciones no dinerarias
+// como hecho consumado: quien aporto dinero firmaba una operacion que nunca hizo.
+function textoAportacion() {
+  const base = 'Constituci&oacute;n de la sociedad mediante escritura p&uacute;blica. ';
+  if (chk('f_aport_no_dineraria')) {
+    return base + '<span class="declarado">Aportaci&oacute;n no dineraria de ' +
+      vOr('f_part_filial', 'PARTICIPACIONES') + ' participaciones de ' +
+      vOr('f_filial', 'FILIAL') + ', mas aportaci&oacute;n dineraria de ' +
+      vOr('f_saldo', 'SALDO') + ' EUR. Revisa si te acogiste a alg&uacute;n r&eacute;gimen fiscal ' +
+      'especial y si hiciste la comunicaci&oacute;n que ese r&eacute;gimen exige: si no, no lo menciones ' +
+      'en tu memoria.</span>';
+  }
+  return base + 'Aportaci&oacute;n dineraria de ' + vOr('f_capital', 'CAPITAL') + ' EUR.';
+}
+
+// Las dos afirmaciones mas caras del paquete. La version de partida las escribia siempre, sin
+// preguntar nada: ni activo, ni cifra de negocios, ni empleados. Ahora solo se emiten
+// si el usuario las ha marcado, y si no las marca sale un recordatorio en su lugar
+// (no el silencio, que se lee como "no aplica").
+function parrafoAuditoria() {
+  if (chk('f_exento_auditoria')) {
+    return '<p class="declarado">Asimismo, se hace constar que la sociedad no est&aacute; obligada a ' +
+      'someter las cuentas anuales a verificaci&oacute;n por auditor de cuentas ni a formular informe ' +
+      'de gesti&oacute;n, al no concurrir las circunstancias del art&iacute;culo 263 de la Ley de ' +
+      'Sociedades de Capital.</p>';
+  }
+  return '<p class="no-pdf" style="color:#8a5a00;font-size:12px;border-left:3px solid #f0d0a0;padding-left:10px">' +
+    '<strong>Pendiente de decidir:</strong> aqu&iacute; ir&iacute;a la declaraci&oacute;n de que la ' +
+    'sociedad no est&aacute; obligada a auditar. No se ha escrito porque no has marcado esa casilla. ' +
+    'Si est&aacute;s exento, m&aacute;rcala. Si eres cabecera de un grupo, comprueba antes las DOS ' +
+    'pruebas: los umbrales que te aplican a ti, y si el agregado del grupo te obliga a consolidar ' +
+    '&mdash; porque la auditor&iacute;a de las cuentas consolidadas no tiene excepci&oacute;n por ' +
+    'tama&ntilde;o. Este p&aacute;rrafo no aparece en el PDF.</p>';
+}
+
+function parrafoMicro() {
+  if (chk('f_micro')) {
+    return '<p class="declarado">La sociedad no formula Estado de Cambios en el Patrimonio Neto ni ' +
+      'Estado de Flujos de Efectivo, al cumplir los criterios que eximen de ello.</p>';
+  }
+  return '';
+}
+
+// Las mismas dos afirmaciones, pero en el certificado que va al Registro Mercantil.
+// Aqui la numeracion de los apartados tiene que seguir siendo correlativa, asi que si
+// no se marcan, los apartados desaparecen en lugar de quedar en blanco.
+function apartadosCertificado(ordinalInicial) {
+  const ord = ['PRIMERO', 'SEGUNDO', 'TERCERO', 'CUARTO', 'QUINTO', 'SEXTO', 'SEPTIMO'];
+  let i = ordinalInicial;
+  let html = '';
+  if (chk('f_exento_auditoria')) {
+    html += `<p class="declarado"><strong>${ord[i++]}.&mdash;</strong> Que la sociedad no est&aacute; ` +
+      'obligada a la verificaci&oacute;n contable por auditor de cuentas, al no concurrir las ' +
+      'circunstancias del art&iacute;culo 263 de la Ley de Sociedades de Capital.</p>';
+  }
+  if (chk('f_micro')) {
+    html += `<p class="declarado"><strong>${ord[i++]}.&mdash;</strong> Que la sociedad no est&aacute; ` +
+      'obligada a formular informe de gesti&oacute;n, ni estado de cambios en el patrimonio neto, ni ' +
+      'estado de flujos de efectivo.</p>';
+  }
+  if (!html) {
+    html = '<p class="no-pdf" style="color:#8a5a00;font-size:12px;border-left:3px solid #f0d0a0;padding-left:10px">' +
+      '<strong>No se ha incluido ninguna declaraci&oacute;n sobre auditor&iacute;a ni sobre los estados ' +
+      'que no formulas.</strong> Son los dos apartados que el Registro mira para no pedirte el informe ' +
+      'de auditor&iacute;a. Si te corresponden, m&aacute;rcalas en el formulario; si no, este certificado ' +
+      'va incompleto. Este aviso no sale en el PDF.</p>';
+  }
+  return html;
+}
+
+// La aplicacion del resultado estaba redactada de antemano como "no procede", que solo
+// es cierto con resultado cero. Con beneficio hay que dotar reserva legal y decidir, y
+// ese acuerdo es justo el que mira el Registro.
+function textoAplicacionResultado() {
+  const r = parseNum(v('f_resultado'));
+  if (Math.abs(r) < 0.005) {
+    return '<p>Dado que el resultado del ejercicio es de cero euros, no procede distribuci&oacute;n ni ' +
+      'aplicaci&oacute;n alguna del mismo.</p>';
+  }
+  if (r < 0) {
+    return `<p>El resultado del ejercicio ha sido negativo, de ${fmtNum(r)} EUR. Se acuerda aplicarlo ` +
+      'a resultados negativos de ejercicios anteriores.</p>' +
+      '<p class="no-pdf" style="color:#8a5a00;font-size:12px;border-left:3px solid #f0d0a0;padding-left:10px">' +
+      'Con p&eacute;rdidas, comprueba tambi&eacute;n si tu patrimonio neto ha quedado por debajo de los ' +
+      'umbrales que obligan al administrador a actuar: es una obligaci&oacute;n con plazo y con ' +
+      'responsabilidad personal detr&aacute;s, y nada en esta herramienta lo vigila.</p>';
+  }
+  return `<p>El resultado del ejercicio ha sido positivo, de ${fmtNum(r)} EUR. Se acuerda la siguiente ` +
+    'aplicaci&oacute;n: <span class="placeholder">[COMPLETA TU ACUERDO: dotaci&oacute;n a reserva legal, ' +
+    'reserva voluntaria, dividendos]</span>.</p>' +
+    '<p class="no-pdf" style="color:#8a5a00;font-size:12px;border-left:3px solid #f0d0a0;padding-left:10px">' +
+    '<strong>Esto no se puede rellenar por ti.</strong> Con beneficio hay que dotar reserva legal hasta ' +
+    'el limite que corresponda antes de repartir, y el acuerdo de aplicaci&oacute;n es uno de los ' +
+    'documentos que el Registro mira. Esc&iacute;belo t&uacute;, y que coincida con lo que pongas en el ' +
+    'apartado de aplicaci&oacute;n de resultados del dep&oacute;sito.</p>';
+}
+
+// El marco contable NO se puede dar por decidido, y menos para una holding.
+// El PGC de PYMEs esta vedado a quien forme parte de un grupo que formule o debiera
+// haber formulado cuentas consolidadas, y su elegibilidad se mide sobre el AGREGADO
+// del grupo, no sobre la sociedad sola. El orden de las decisiones importa:
+// consolidacion -> plan contable -> modelo de cuentas -> auditoria.
+function marcoContable() {
+  if (esGrupo()) {
+    return 'Marco contable: PENDIENTE DE DECIDIR. Has calificado tu participada como empresa del ' +
+      'grupo, asi que antes de elegir plan contable y modelo de cuentas tienes que resolver si te ' +
+      'toca consolidar: el PGC de PYMEs esta vedado a quien forme parte de un grupo que formule o ' +
+      'debiera haber formulado cuentas consolidadas, y los limites del modelo abreviado se miden ' +
+      'sobre el agregado del grupo. Decidelo con tu asesor y escribe aqui el marco que apliques.';
+  }
+  return 'Modelo abreviado. Comprueba con tu asesor qué plan contable te corresponde y que el ' +
+    'modelo elegido aqui coincide con el que marques en el deposito.';
+}
+
+// Caja comun para los avisos que NO deben imprimirse. La clase no-pdf es la que
+// html2pdf ignora al exportar; sin ella la frase "esto no sale en el PDF" era falsa.
+function aviso(html) {
+  return '<p class="no-pdf" style="color:#8a5a00;font-size:12px;border-left:3px solid #f0d0a0;padding-left:10px">' + html + '</p>';
+}
+
+// El tipo del Impuesto sobre Sociedades sale del campo, nunca de una suposicion.
+function tipoISTxt() {
+  return v('f_tipo_is') ? v('f_tipo_is') + '%' : '<span class="placeholder">[TIPO IS]</span>';
+}
+
+// Si el usuario escribe 15, no se afirma el tipo de nueva creacion: se le avisa.
+// El art. 29.1 LIS exige realizar actividades economicas y excluye a las entidades
+// patrimoniales y a las que formen parte de un grupo del art. 42 CCom. Una holding que
+// controla una filial encaja en las dos exclusiones. Ver AVISO.md, punto 1.
+function avisoTipoReducido() {
+  if (parseNum(v('f_tipo_is')) !== 15) return '';
+  return aviso('<strong>Has puesto el 15%.</strong> El tipo reducido de entidades de nueva ' +
+    'creaci&oacute;n exige realizar actividades econ&oacute;micas, y excluye tanto a las entidades ' +
+    'patrimoniales como a las que forman parte de un grupo del art. 42 del C&oacute;digo de Comercio. ' +
+    'Una holding que controla una filial encaja en esas exclusiones por varias v&iacute;as a la vez, y ' +
+    'la AEAT publica el 25% para las patrimoniales. Comprueba tu caso antes de firmar esto.');
+}
+
+// La unipersonalidad y su origen. Que sea sobrevenida y no se inscriba en seis meses
+// hace responder al socio unico personal, ilimitada y solidariamente de las deudas
+// contraidas en ese periodo: no es un matiz de redaccion. Ver AVISO.md, punto 12.
+function parrafoUnipersonal(admin, dni) {
+  if (!isUnipersonal()) {
+    return '<p>El capital social pertenece a varios socios, cuyos datos constan en el Libro ' +
+      'Registro de Socios.</p>' +
+      aviso('<strong>Has declarado varios socios.</strong> Esta memoria, el Libro de Actas y el ' +
+            'Libro Registro de Socios siguen redactados para socio &uacute;nico: revisa documento a ' +
+            'documento antes de firmar nada.');
+  }
+  return '<p class="declarado">La sociedad es unipersonal. El socio &uacute;nico es ' + admin +
+    ', con DNI ' + dni + '.</p>' +
+    aviso('Si tu unipersonalidad es <strong>sobrevenida</strong> &mdash;te quedaste como socio ' +
+          '&uacute;nico despu&eacute;s de comprar las participaciones de los dem&aacute;s&mdash; y no la ' +
+          'has inscrito en seis meses, respondes personal, ilimitada y solidariamente de las deudas ' +
+          'sociales contra&iacute;das en ese periodo. Si es originaria, hazlo constar aqu&iacute;.');
+}
+
+// Los epigrafes de la memoria tienen que seguir al selector grupo/asociada, igual que
+// ya lo hacen la cuenta contable y los libros.
+function grupoOAsoc() { return esGrupo() ? 'del grupo' : 'asociadas'; }
+
+// El desembolso solo se describe como aportacion no dineraria si el usuario lo ha marcado.
+function textoDesembolso(vpart, saldo, filial, capital) {
+  if (chk('f_aport_no_dineraria')) {
+    return '<p class="declarado">La totalidad del capital fue desembolsada en el acto fundacional: ' +
+      vpart + ' EUR mediante aportaci&oacute;n no dineraria (participaciones en ' + filial + ') y ' +
+      saldo + ' EUR en aportaci&oacute;n dineraria.</p>';
+  }
+  return '<p>La totalidad del capital, ' + capital + ' EUR, fue desembolsada en el acto fundacional ' +
+    'mediante aportaci&oacute;n dineraria.</p>';
+}
+
+// Como se adquirieron las participaciones de la filial.
+function textoAdquisicion(vpart) {
+  return chk('f_aport_no_dineraria')
+    ? ' adquiridas mediante aportaci&oacute;n no dineraria en el acto fundacional por importe de ' + vpart + ' EUR.'
+    : ' valoradas en ' + vpart + ' EUR. <span class="placeholder">[INDICA COMO LAS ADQUIRISTE]</span>';
+}
+
+// El parrafo fiscal del regimen especial. La version de partida lo afirmaba siempre,
+// incluida la comunicacion al organo competente, que es un acto que o se hizo o no.
+function parrafoRegimenEspecial() {
+  if (!chk('f_aport_no_dineraria')) return '';
+  return '<p class="declarado">Respecto de las aportaciones no dinerarias realizadas en la ' +
+    'constituci&oacute;n: <span class="placeholder">[INDICA SI SE ACOGIERON O NO AL R&Eacute;GIMEN ' +
+    'FISCAL ESPECIAL del Cap&iacute;tulo VII, T&iacute;tulo VII de la Ley 27/2014, Y SI SE EFECTU&Oacute; ' +
+    'LA COMUNICACI&Oacute;N que ese r&eacute;gimen exige]</span>.</p>' +
+    aviso('Esto no se escribe por ti: acogerse al r&eacute;gimen especial y comunicarlo son dos actos ' +
+          'concretos. Afirmar que se hicieron cuando no se hicieron es una declaraci&oacute;n falsa en ' +
+          'una memoria depositada.');
+}
+
+// El resultado tal y como se enuncia dentro de un acuerdo social.
+function resultadoEnLetra() {
+  const r = parseNum(v('f_resultado'));
+  if (!v('f_resultado')) return '<span class="placeholder">[RESULTADO]</span>';
+  if (Math.abs(r) < 0.005) return '<strong>cero euros (0,00 EUR)</strong>';
+  return '<strong>' + fmtNum(r) + ' EUR</strong>';
+}
+
+// El apartado 2.5 de la memoria afirmaba cumplir unos umbrales concretos sin que nada
+// se los hubiera preguntado. Ahora depende de la casilla y, sobre todo, NO imprime
+// cifras: los umbrales se mueven y una guia con numeros clavados envejece mal.
+function apartadoMemoriaMicro() {
+  if (!chk('f_micro')) {
+    return '<p class="no-pdf" style="color:#8a5a00;font-size:12px;border-left:3px solid #f0d0a0;padding-left:10px">' +
+      '<strong>Apartado pendiente:</strong> aqu&iacute; ir&iacute;a la justificaci&oacute;n de por ' +
+      'qu&eacute; no formulas Estado de Cambios en el Patrimonio Neto ni Estado de Flujos de Efectivo. ' +
+      'No se ha escrito porque no has marcado esa casilla. Si no te corresponde la exenci&oacute;n, ' +
+      'tienes que formular esos dos estados y esta herramienta no los genera. Este aviso no sale en el PDF.</p>';
+  }
+  return '<p class="declarado"><strong>2.5. Criterios aplicados.</strong> La sociedad cumple los ' +
+    'requisitos que le permiten acogerse a los criterios espec&iacute;ficos aplicables por su ' +
+    'tama&ntilde;o y, en consecuencia, no formula Estado de Cambios en el Patrimonio Neto ni Estado ' +
+    'de Flujos de Efectivo, presentando &uacute;nicamente Balance, Cuenta de P&eacute;rdidas y ' +
+    'Ganancias y Memoria. <em>Comprueba los umbrales vigentes al cerrar tu ejercicio antes de firmar ' +
+    'esto: se mueven.</em></p>';
+}
+
+function cuentaCodigo() { return esGrupo() ? '2403' : '2404'; }
+function cuentaNombre() {
+  return esGrupo()
+    ? 'Participaciones a largo plazo en empresas del grupo'
+    : 'Participaciones a largo plazo en empresas asociadas';
+}
+function cuentaParticipaciones() {
+  return cuentaCodigo() + ' ' + cuentaNombre().replace('a largo plazo', 'a l/p');
+}
+
+// Total del activo y del patrimonio neto, con el resultado y el pasivo que declare
+// el usuario. La version de partida daba por bueno unicamente Activo = Capital, de modo que
+// marcaba en rojo el balance correcto de casi cualquier otra sociedad.
+function totalPasivoYPN() {
+  return fmtNum(parseNum(v('f_capital')) + parseNum(v('f_resultado')) + parseNum(v('f_pasivo')));
+}
+function totalPN() {
+  return fmtNum(parseNum(v('f_capital')) + parseNum(v('f_resultado')));
+}
+
+// Lo que la version de partida no decia en ningun sitio: si controlas la filial, eres
+// cabecera de un grupo y la obligacion de consolidar NACE. Lo que te salva es una
+// dispensa, que no es lo mismo que no tener la obligacion.
+function avisoGrupo() {
+  if (!esGrupo()) {
+    return 'Has calificado tu participada como empresa ASOCIADA (influencia significativa, sin control), ' +
+           'asi que por esta participacion no eres cabecera de grupo. Si en realidad la controlas, ' +
+           'cambia el selector: la calificacion no es una preferencia de redaccion.';
+  }
+  return 'Si controlas tu filial eres sociedad DOMINANTE de un grupo, y la obligacion de consolidar ' +
+         'NACE con el control: no hay umbral de entrada. Lo que probablemente te salve es una DISPENSA ' +
+         'por tamano, y sus limites NO son los de auditoria: son los de la cuenta de perdidas y ganancias ' +
+         'abreviada medidos sobre el AGREGADO del grupo. Un fundador con una filial pequena suele estar ' +
+         'comodamente dispensado, pero "dispensado" y "no obligado" no son lo mismo, y hay un requisito ' +
+         'de dos ejercicios consecutivos. No marques "no pertenece a grupo de sociedades" sin pensarlo.';
+}
+
+
+function formatDate(dateStr) {
+  if (!dateStr) return '<span class="placeholder">[FECHA]</span>';
+  const d = new Date(dateStr + 'T00:00:00');
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${d.getDate()} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+function parseNum(str) {
+  if (!str) return 0;
+  return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+function fmtNum(n) {
+  return n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function totalActivo() {
+  return fmtNum(parseNum(v('f_valor_part')) + parseNum(v('f_saldo')));
+}
+
+// La version de partida comparaba Activo contra CAPITAL, asi que marcaba en rojo el balance
+// correcto de cualquier sociedad que tuviera resultado distinto de cero, reservas o
+// una deuda. Y un aviso en rojo sobre algo que esta bien empuja a falsear cifras hasta
+// que se apaga. Ahora compara Activo contra Patrimonio Neto mas Pasivo, que es la
+// igualdad que de verdad tiene que cumplirse.
+function checkBalance() {
+  const el = document.getElementById('balanceCheck');
+  if (!el) return;
+  const activo  = parseNum(v('f_valor_part')) + parseNum(v('f_saldo'));
+  const pn      = parseNum(v('f_capital')) + parseNum(v('f_resultado'));
+  const pasivo  = parseNum(v('f_pasivo'));
+  const pnYPas  = pn + pasivo;
+
+  if (!v('f_capital')) {
+    el.className = 'balance-check';
+    el.textContent = '';
+    return;
+  }
+
+  if (Math.abs(activo - pnYPas) < 0.01) {
+    el.className = 'balance-check balance-ok';
+    el.textContent = 'Balance cuadrado: Activo ' + fmtNum(activo) +
+      ' = Patrimonio Neto ' + fmtNum(pn) + ' + Pasivo ' + fmtNum(pasivo);
+  } else {
+    const dif = activo - pnYPas;
+    el.className = 'balance-check balance-err';
+    el.textContent = 'Descuadre de ' + fmtNum(Math.abs(dif)) + ': Activo ' + fmtNum(activo) +
+      ' frente a Patrimonio Neto + Pasivo ' + fmtNum(pnYPas) + '. ' +
+      (dif > 0 ? 'Te falta patrimonio o pasivo por declarar (¿reservas? ¿prima de emision? ¿una deuda?).'
+               : 'Te falta activo por declarar.') +
+      ' No cambies cifras para apagar este aviso: cambialas solo si las de tu contabilidad son otras.';
+  }
+}
+
+// --- Plazos ---
+// Se DERIVAN de tu fecha de cierre. Aqui no hay ninguna fecha absoluta a proposito:
+// una fecha escrita a mano caduca y acaba mostrando "VENCIDO" a quien va en plazo.
+//
+// Reglas (verificadas contra el texto consolidado del BOE, octubre de 2026):
+//   formular cuentas .... 3 meses desde el cierre ............ art. 253.1 LSC
+//   legalizar libros .... 4 meses desde el cierre ............ art. 27 CCom
+//   aprobar en junta .... 6 meses desde el cierre ............ art. 164.1 LSC
+//   depositar en el RM .. 1 mes desde la APROBACION REAL ..... art. 279.1 LSC
+//   modelo 200 .......... 25 dias naturales tras los 6 meses, prorrogado al
+//                         siguiente dia habil ............... art. 30.5 Ley 39/2015
+//
+// El plazo de deposito cuenta desde el dia en que apruebas de verdad, no desde el
+// ultimo dia que tenias para aprobar: si apruebas en abril, vence en mayo.
+function parseFechaInput(id) {
+  const s = v(id);
+  if (!s) return null;
+  const d = new Date(s + 'T23:59:59');
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function sumarMeses(fecha, meses) {
+  const d = new Date(fecha.getTime());
+  const dia = d.getDate();
+  d.setMonth(d.getMonth() + meses);
+  // setMonth desborda cuando el mes destino no tiene ese dia (31 de enero + 1 mes
+  // daria 3 de marzo). setDate(0) retrocede al ultimo dia del mes correcto.
+  if (d.getDate() < dia) d.setDate(0);
+  return d;
+}
+
+function siguienteDiaHabil(fecha) {
+  const d = new Date(fecha.getTime());
+  // Solo salta sabados y domingos: los festivos locales no se pueden saber aqui.
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  return d;
+}
+
+function fmtFecha(d) {
+  if (!d) return '&mdash;';
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function plazoFormular() { const c = parseFechaInput('f_fecha_cierre_iso'); return c ? sumarMeses(c, 3) : null; }
+function plazoLibros()   { const c = parseFechaInput('f_fecha_cierre_iso'); return c ? sumarMeses(c, 4) : null; }
+function plazoJunta()    { const c = parseFechaInput('f_fecha_cierre_iso'); return c ? sumarMeses(c, 6) : null; }
+function plazoDeposito() { const j = parseFechaInput('f_fecha_junta');      return j ? sumarMeses(j, 1) : null; }
+function plazoM200() {
+  const c = parseFechaInput('f_fecha_cierre_iso');
+  if (!c) return null;
+  const base = sumarMeses(c, 6);
+  base.setDate(base.getDate() + 25);
+  return siguienteDiaHabil(base);
+}
+
+function diasHasta(fecha) {
+  if (!fecha) return 'rellena tu fecha de cierre';
+  const diff = Math.ceil((fecha - new Date()) / (1000 * 60 * 60 * 24));
+  if (diff > 1)  return 'quedan ' + diff + ' dias';
+  if (diff === 1) return 'queda 1 dia';
+  if (diff === 0) return 'vence HOY';
+  return 'fuera de plazo';
+}
+
+function estadoPlazo(fecha, hecho) {
+  if (hecho) return '<span style="color:#00b894;font-weight:600">Hecho</span>';
+  if (!fecha) return '<span style="color:#999">&mdash;</span>';
+  const diff = Math.ceil((fecha - new Date()) / (1000 * 60 * 60 * 24));
+  if (diff < 0)  return '<span style="color:#e17055;font-weight:600">Fuera de plazo</span>';
+  if (diff <= 15) return '<span style="color:#fdcb6e;font-weight:600">Urgente</span>';
+  return '<span style="color:#999">Pendiente</span>';
+}
+
+function diasRestantes()    { return diasHasta(plazoJunta()); }
+function diasRestantes200() { return diasHasta(plazoM200()); }
+
+// Solo aparece si TU calendario va tarde. La version de partida traia este bloque siempre
+// visible con el retraso de otra persona escrito dentro.
+function bloqueRetrasos() {
+  const vencido = f => f && f < new Date();
+  const tarde = [];
+  if (vencido(plazoFormular())) tarde.push('formulaci&oacute;n de cuentas');
+  if (vencido(plazoLibros()))   tarde.push('legalizaci&oacute;n de libros');
+  if (vencido(plazoJunta()))    tarde.push('aprobaci&oacute;n en junta');
+  if (vencido(plazoDeposito())) tarde.push('dep&oacute;sito en el Registro Mercantil');
+  if (vencido(plazoM200()))     tarde.push('Modelo 200');
+  if (!tarde.length) return '';
+
+  return `
+    <div style="margin-top:16px;padding:16px;background:#fff8f0;border:1px solid #f0d0a0;border-radius:6px">
+      <p style="font-weight:700;margin-bottom:8px">Vas fuera de plazo en: ${tarde.join(', ')}</p>
+      <p>&mdash; <strong>Aprobar tarde no invalida nada.</strong> La junta general ordinaria es
+         v&aacute;lida aunque se convoque o se celebre fuera de plazo (art. 164.2 LSC). No hay nada
+         que caduque por llegar en julio.</p>
+      <p>&mdash; <strong>Lo que s&iacute; tiene consecuencia es no depositar.</strong> El cierre de la
+         hoja registral no se dispara al d&iacute;a siguiente de pasarse el mes: el disparador es
+         <strong>un a&ntilde;o desde el cierre del ejercicio</strong> (art. 378.1 RRM). Y si las cuentas
+         no se han aprobado, el art. 378.5 RRM permite evitar el cierre acreditando esa circunstancia
+         con certificaci&oacute;n de firmas legitimadas, presentada antes de ese a&ntilde;o y renovada
+         cada seis meses.</p>
+      <p>&mdash; <strong>La sanci&oacute;n por no depositar se cuantifica en el 0,5 POR MIL</strong> del
+         activo m&aacute;s las ventas (disposici&oacute;n adicional und&eacute;cima del RD 2/2021), no en
+         el 0,5%: si has le&iacute;do un porcentaje por ah&iacute;, probablemente est&eacute;
+         multiplicado por diez. Y depositar <em>antes</em> de que se incoe el expediente da la
+         sanci&oacute;n en grado m&iacute;nimo reducida en un 50% (art. 283.3 LSC). O sea: presentar
+         hoy, aunque sea tarde, cambia la cifra.</p>
+      <p>&mdash; <strong>Legalizar los libros tarde no genera multa.</strong> El registrador legaliza y
+         hace constar el retraso en la diligencia del libro (art. 333.3 RRM). No lo confundas con el
+         dep&oacute;sito de cuentas, que es otro tr&aacute;mite con otras consecuencias.</p>
+      <p style="margin-top:8px;font-size:11px;color:#777">Verificado contra el texto consolidado del BOE
+         en octubre de 2026. Comprueba la vigencia: esto cambia.</p>
+    </div>
+  `;
+}
+
+// --- Steps data ---
+
+const steps = [
+  {
+    phase: 'FASE 1 — FORMULAR LAS CUENTAS',
+    deadline: 'Hasta el {{PLAZO_FORMULAR}} (3 meses desde el cierre, art. 253.1 LSC)',
+    items: [
+      { id: 's0', text: '<strong>Rellena primero el formulario de la izquierda ENTERO</strong>, incluida la seccion "Lo que vas a declarar". Las casillas de esa seccion deciden que parrafos se escriben en tus documentos: si no marcas una, el parrafo no sale. Es a proposito.' },
+      { id: 's1', text: '<strong>Leer el Balance, la PyG y la Memoria enteros</strong> en la pestana "Cuentas Anuales". No los ojees: busca las frases que afirman algo sobre tu sociedad y decide una por una si son verdad en tu caso. Los errores caros son los parrafos escritos en afirmativo, no los campos vacios &mdash; esos se ven.' },
+      { id: 's2', text: 'Exportar las Cuentas Anuales a PDF' },
+      { id: 's3', text: 'Firmar el PDF de las Cuentas Anuales. <strong>Tienen que firmarlas TODOS los administradores</strong> (art. 253.2 LSC): si falta la firma de alguno, hay que hacerlo constar en cada documento indicando la causa. El registrador califica que consten las firmas, y su ausencia sin esa mencion impide tener por efectuado el deposito. Es el defecto formal que mas devoluciones provoca.' },
+      { id: 's4', text: 'Exportar a PDF y firmar el Certificado de Formulacion (pestana "Cert. Formulacion")' },
+    ]
+  },
+  {
+    phase: 'FASE 2 — DECISIONES DEL SOCIO ÚNICO',
+    deadline: 'Hasta el {{PLAZO_JUNTA}} (6 meses desde el cierre, art. 164.1 LSC)',
+    items: [
+      { id: 's5', text: 'Exportar a PDF el acta (pestana "Acta"). Si la sociedad es unipersonal <strong>no hay junta que celebrar</strong>: el socio unico ejerce las competencias de la junta y consigna sus decisiones en acta bajo su firma (art. 15 LSC). Sin convocatoria, sin orden del dia y sin quorum.' },
+      { id: 's6', text: 'Firmar el PDF del acta con certificado digital, o a mano y escanear' },
+      { id: 's6d', text: '<strong>Si se te ha pasado el plazo, no pasa lo que crees.</strong> La junta general ordinaria es <strong>valida</strong> aunque se convoque o se celebre fuera de plazo (art. 164.2 LSC). Nada caduca por aprobar en septiembre: sigue adelante con el deposito.' },
+    ]
+  },
+  {
+    phase: 'FASE 3 — LEGALIZAR LIBROS TELEMÁTICAMENTE',
+    deadline: 'Hasta el {{PLAZO_LIBROS}} (4 meses desde el cierre, art. 27 CCom)',
+    items: [
+      { id: 's6b', text: '<strong>LEE ESTO ANTES DE PREPARAR NADA &mdash; la trampa de calendario.</strong> En cada ejercicio se legalizan <strong>las actas del ejercicio anterior</strong>. O sea: el libro de actas que tienes que presentar ahora contiene las actas <strong>fechadas en {{EJERCICIO}}</strong>, NO la junta que aprueba las cuentas de {{EJERCICIO}} &mdash; esa junta se celebra en el ejercicio siguiente y va al libro del ano que viene. Mucha gente legaliza un libro incompleto justo aqui, o se salta un ejercicio entero. Cerrar cuentas y legalizar libros son dos tramites con dos calendarios distintos que se solapan.' },
+      { id: 's6c', text: '<strong>Requisito que hay que ver con semanas de margen:</strong> LEGALIA 2 es una aplicacion de escritorio <strong>solo para Windows</strong> (necesita .NET Framework). Y <strong>no hay alternativa web</strong>: el portal de los registradores sirve para ENVIAR el fichero, no para generarlo &mdash; el manual oficial pide "la carpeta que contiene el fichero generado con el programa colegial LEGALIA 2 u otro equivalente". Si trabajas en Mac o Linux, resuelvelo antes, no el dia 29.' },
+      { id: 's7', text: 'Preparar PDF del Libro Diario con tus asientos reales. En una holding recien constituida el asiento de apertura ({{FECHA_CONST}}) suele ser: Debe {{CUENTA_PART}} por {{VALOR_PART}} EUR + 572 Bancos por {{SALDO}} EUR | Haber 100 Capital social por {{CAPITAL}} EUR. <strong>Si contabilizaste la factura de notaria y registro, ese asiento tambien va aqui</strong>, y entonces tu resultado no es cero.' },
+      { id: 's8', text: 'Preparar PDF del Libro de Inventarios y Cuentas Anuales: balance de apertura, los balances de comprobacion con sumas y saldos (al menos trimestrales), el inventario de cierre y las cuentas anuales del ejercicio' },
+      { id: 's9', text: 'Preparar PDF del Libro de Actas con las actas <strong>fechadas en {{EJERCICIO}}</strong>. <strong>Ya no se legalizan libros en blanco</strong> para rellenarlos despues: esta prohibido para los ejercicios iniciados a partir del 29-09-2013. Se legaliza con las actas dentro.' },
+      { id: 's10', text: 'Libro Registro de Socios: {{ADMIN}}, DNI {{DNI}}, {{NUM_PART}} participaciones (1 al {{NUM_PART}}), % de capital, desde {{FECHA_CONST}}. <strong>OJO: este libro NO es anual.</strong> Despues del libro inicial, solo hay que legalizar uno nuevo en los cuatro meses siguientes al cierre del ejercicio <strong>en que haya habido algun cambio de titularidad o algun gravamen</strong> sobre las participaciones. Si en {{EJERCICIO}} no hubo movimiento societario, no toca y no lo presentes.' },
+      { id: 's10c', text: '<strong>Si tu holding es UNIPERSONAL, hay un quinto libro que casi nadie cita:</strong> el libro-registro de contratos del socio unico con la sociedad (art. 16 LSC). En LEGALIA aparece como "Libro-Registro de Contratos del Socio Unico con la Sociedad Unipersonal". No es decorativo: los contratos que no se transcriban <strong>no son oponibles a la masa en caso de concurso</strong> (art. 16.2 LSC). Si te has facturado algo a ti mismo a traves de la holding, esto te afecta.' },
+      { id: 's10b', text: '<strong>REQUISITO PREVIO:</strong> darse de alta como abonado en Registradores Online antes de poder presentar nada. Sin ese alta no se puede enviar ningun libro: <a href="https://www.registradores.org/registroonline/alta/alta.seam" target="_blank">registradores.org — alta de usuario</a>' },
+      { id: 's11pre', text: 'Descargar e instalar LEGALIA 2 desde la zona de <a href="https://www.registradores.org/documentacion-y-descargas" target="_blank">documentacion y descargas de registradores.org</a> (fichero "Legalia2Setup.msi"). Es el equivalente al D2, pero para libros.' },
+      { id: 's11pre2', text: 'Leer el "Manual de ayuda de Nueva Presentacion Telematica de Libros", en la misma pagina de descargas. Si vas a mandar el libro registro de socios con nombres y domicilios, mira tambien el regimen de cifrado y borrado de los ficheros: la Instruccion de 12 de febrero de 2015 fue modificada por la de 1 de julio de 2015, y es esta segunda la que permite cifrar los libros y la que obliga al Registro a borrar los ficheros y a no publicar su contenido.' },
+      { id: 's11', text: 'Abrir LEGALIA 2 > datos de la sociedad: CIF {{CIF}}, Hoja {{HOJA}}, Registro Mercantil de {{PROVINCIA}}, ejercicio {{EJERCICIO}}' },
+      { id: 's12', text: 'Anadir los libros que te toquen (ver s10 y s10c antes de decidir cuantos son) &mdash; Fecha de apertura y fecha de cierre de TU ejercicio, Orden: 1 solo si son tus primeros libros (en el segundo ejercicio el orden cambia), Blanco: No' },
+      { id: 's13', text: 'Adjuntar los PDF de cada libro (los genera la Fase 3 de esta app)' },
+      { id: 's14a', text: 'Firmar con certificado digital y enviar telematicamente desde LEGALIA 2' },
+      { id: 's14b', text: 'Descargar el justificante de legalizacion y guardarlo. Soporte: registro.electronico@registradores.org / 91 270 17 97' },
+      { id: 's14c', text: '<strong>Si llegas tarde, preséntalo igual.</strong> Legalizar fuera de plazo no genera multa ni expediente: el registrador legaliza y hace constar el retraso en la diligencia del libro (art. 333.3 RRM). No lo confundas con el deposito de cuentas, que es otro tramite y si tiene regimen sancionador.' },
+    ]
+  },
+  {
+    phase: 'FASE 4 — DEPÓSITO DE CUENTAS EN EL REGISTRO MERCANTIL',
+    deadline: 'Hasta el {{PLAZO_DEPOSITO}} (1 mes desde TU aprobacion, art. 279.1 LSC)',
+    items: [
+      { id: 's13b', text: '<strong>Requisitos previos, los tres.</strong> (1) Estar dado de alta en los servicios telematicos de registradores.org, con el certificado emitido a un NIF y asociado a un usuario abonado. (2) Tener instalada la aplicacion <strong>Autofirma</strong>. (3) El programa D2 del ejercicio correcto. Sin los tres te quedas bloqueado en la pantalla de acceso, y normalmente lo descubres el ultimo dia por la tarde.' },
+      { id: 's14', text: 'Descargar el programa D2 desde la <a href="https://sede.registradores.org/sede/sede-corpme-web/informacion-y-ayuda/documentacion-descargas/registro-mercantil" target="_blank">SEDE de los registradores — Documentacion y Descargas</a> (aplicacion de escritorio para Windows). <strong>Elige la version del ejercicio que depositas</strong>, no una anterior: si generas el fichero con los modelos del ejercicio pasado, el Registro te lo suspende. Si tu programa de contabilidad ya genera el .ZIP conforme a los modelos vigentes, puedes usarlo en lugar del D2.' },
+      { id: 's14d', text: '<strong>Los modelos cambiaron en mayo de 2026.</strong> Son obligatorios para todo deposito presentado desde entonces, y han eliminado toda referencia al CNAE-2009: solo valen los codigos de la <strong>CNAE-2025</strong>. Si una guia te dice que pongas un CNAE de cuatro digitos de la clasificacion vieja, esta caducada.' },
+      { id: 's15', text: 'Abrir D2 > Nuevo deposito > Nombre: <strong>CUENTAS {{EJERCICIO}}</strong>, CIF: <strong>{{CIF}}</strong>, Ejercicio: <strong>{{EJERCICIO}}</strong>, Descripcion: <strong>Deposito cuentas anuales {{DEN}} ejercicio {{EJERCICIO}}</strong>.' },
+      { id: 's15e', text: '<strong>DECISION, no instruccion: la casilla de "ejercicio no completo".</strong> Marcala si tu ejercicio no cubre doce meses &mdash; el caso tipico es el primer ejercicio de una sociedad constituida a mitad de ano. Si has leido en algun sitio que no hay que marcarla teniendo un ejercicio partido, no te fies: confirmalo con el manual del programa o con tu Registro Mercantil antes de pulsar. Esta es la indicacion con mas riesgo de toda la fase.' },
+      { id: 's15b', text: '<strong>DECISION, no instruccion: Abreviado o PYMES.</strong> El modelo que elijas aqui tiene que ser coherente con el marco contable que declara tu memoria: no puedes depositar en un modelo y declarar en la memoria haberte preparado conforme a otro. Decidelo una vez, con tu asesor, y propagalo a los dos sitios. Marcar "Cumplimentar memoria normalizada" si vas a rellenarla en el propio D2.' },
+      { id: 's15c', text: 'Introducir el <strong>IRUS</strong> de la sociedad (identificador en el Registro Unico de Sociedades). Sale de la escritura de constitucion o de una nota simple del Registro.' },
+      { id: 's15d', text: 'Datos Generales: forma juridica <strong>SL</strong>, CNAE <strong>{{CNAE}}</strong>. Datos del administrador: {{ADMIN}}, DNI {{DNI}}, {{CARGO}}.' },
+      { id: 's16', text: 'Caracteres de la sociedad: marca <strong>solo lo que hayas comprobado</strong>. "Sin auditor" y "sin informe de gestion" son afirmaciones, no valores por defecto. Y sobre el grupo: <strong>{{AVISO_GRUPO}}</strong>' },
+      { id: 's16b', text: '<strong>La unipersonalidad NO se declara aqui.</strong> No hay ningun campo de socio unico en los modelos de deposito: hacer constar la unipersonalidad es un acto registral aparte, por escritura publica inscribible (art. 13.1 LSC). Y tiene un plazo con dientes: si la unipersonalidad es <strong>sobrevenida</strong> &mdash; te has quedado como socio unico tras comprar la participacion de los demas &mdash; y no la inscribes en seis meses, el socio unico responde <strong>personal, ilimitada y solidariamente</strong> de las deudas sociales contraidas en ese periodo (art. 14.1 LSC). Para una holding de fundador que ha recomprado participaciones, este es el riesgo mas caro de toda la guia.' },
+      { id: 's17', text: 'Rellenar Balance de Situacion con TUS cifras:<br>&bull; <strong>Activo no corriente (11000)</strong> &rarr; Inversiones en empresas del grupo a l/p (11400): {{VALOR_PART}}<br>&bull; <strong>Activo corriente (12000)</strong> &rarr; Efectivo (12700): {{SALDO}}<br>&bull; <strong>Total Activo (10000)</strong><br>&bull; <strong>Patrimonio Neto (20000)</strong> &rarr; Fondos propios (21000) &rarr; Capital (21100) &rarr; Capital escriturado (21110): {{CAPITAL}}<br>&bull; <strong>Resultado del ejercicio (21700)</strong><br>&bull; <strong>Pasivo no corriente y corriente</strong><br>&bull; <strong>Total PN y Pasivo (30000)</strong>, que tiene que cuadrar con el Total Activo' },
+      { id: 's18', text: 'Rellenar PyG con tus importes: Resultado de explotacion (49100), Resultado financiero (49200), Resultado antes de impuestos (49300), Impuestos (41900), Resultado del ejercicio (49500)' },
+      { id: 's18b', text: 'Aplicacion de resultados: base de reparto (91000-91004) y aplicacion (91005-91012). Si tienes beneficio, aqui va la <strong>dotacion a reserva legal</strong> y la decision de reparto o de reservas &mdash; y tiene que coincidir con el acuerdo que figura en tu acta. Periodo medio de pago a proveedores: 94705' },
+      { id: 's19', text: 'Completar la <strong>DITIR</strong> (declaracion de identificacion del titular real): tipo de presentacion, fecha, y los datos del titular real con su porcentaje de participacion y de derechos de voto. Si hay varios socios, participaciones indirectas o pactos de voto, esto es un analisis y no un copiar y pegar.' },
+      { id: 's19d', text: '<strong>Tres cosas sobre la DITIR que casi nunca se cuentan.</strong> (1) Es <strong>obligatoria en cada deposito</strong>, aunque no haya cambiado nada respecto al ano anterior: sin ella las cuentas se suspenden por "cuentas no completas", y no se admiten formularios en blanco. (2) Si <strong>cambia</strong> el titular real, hay <strong>10 dias</strong> para presentar una DITIR nueva en el Registro Mercantil, sin esperar al deposito del ano siguiente. (3) Una SL que declara por esta via <strong>no</strong> tiene que hacer ademas la declaracion anual de enero en el Registro Central de Titularidades Reales: esa obligacion es para las personas juridicas que no pueden declarar por el Registro Mercantil.' },
+      { id: 's19b', text: '<strong>Memoria Abreviada — Textos libres.</strong> Redactalos a partir de tu situacion real; estos son los apartados que hay que cubrir:<br>&bull; <strong>Apt. 1 Actividad:</strong> constituida {{FECHA_CONST}}, CNAE {{CNAE}}, ejercicio hasta {{FECHA_CIERRE}}, y cual es tu actividad de verdad<br>&bull; <strong>Apt. 4 Inmovilizado</strong><br>&bull; <strong>Apt. 5 Activos financieros:</strong> participaciones en {{FILIAL}} por {{VALOR_PART}} EUR, criterio de valoracion y deterioro<br>&bull; <strong>Apt. 6 Pasivos financieros</strong><br>&bull; <strong>Apt. 7 Fondos propios:</strong> capital {{CAPITAL}} EUR ({{NUM_PART}} participaciones), composicion de la aportacion y movimientos del ejercicio<br>&bull; <strong>Apt. 8 Situacion fiscal:</strong> impuesto devengado, tipo {{TIPO_IS}}% y diferencias temporarias<br>&bull; <strong>Apt. 9 Partes vinculadas:</strong> {{FILIAL}} y el socio administrador, y <strong>todas</strong> las transacciones del ejercicio &mdash; si facturas servicios a tu filial, le prestas dinero, cobras dividendos o tienes cuenta corriente con el socio, va aqui<br>&bull; <strong>Apt. 10 Otra informacion:</strong> empleados, retribucion del organo de administracion, litigios y contingencias' },
+      { id: 's19c', text: '<strong>Memoria Abreviada — Cuadros normalizados.</strong> Los codigos de los cuadros de partes vinculadas son <strong>MAa9.1</strong> (transacciones) y <strong>MAa9.2</strong> (saldos), con MAa9.3 a MAa9.5 para el resto. La <strong>columna</strong> que te toca en cada cuadro depende de como califiques tu participada: dependiente / del grupo / asociada / otras partes vinculadas. <strong>Usa la MISMA calificacion que en la memoria y en el Libro Diario</strong> &mdash; ahora mismo has elegido tratarla como empresa {{GRUPO_O_ASOC}}. Depositar con una calificacion y describir otra en la memoria es el error mas facil de cometer aqui.' },
+      { id: 's20', text: 'Adjuntar el PDF del Certificado de Acuerdos Sociales (pestana "Cert. Acuerdos" de esta app). La fecha del certificado tiene que ser la de tu aprobacion: <strong>{{FECHA_JUNTA}}</strong>.' },
+      { id: 's20c', text: '<strong>No vayas al notario a legitimar firmas.</strong> En el deposito digital la certificacion se admite con la firma electronica reconocida del certificante, o con la firma autografa escaneada en PDF. El Reglamento del Registro Mercantil sigue diciendo literalmente "firmas legitimadas notarialmente" en su articulado, pero en la practica del deposito telematico no se exige, y hay Registros que lo dicen expresamente. Si tienes duda, pregunta a TU Registro antes de pagar una legitimacion.' },
+      { id: 's20b', text: '<strong>Orden de las fechas.</strong> No presentes el deposito antes de la fecha de aprobacion (<strong>{{FECHA_JUNTA}}</strong>), y que coincidan Acta, Certificado y DITIR. Tu plazo maximo es el <strong>{{PLAZO_DEPOSITO}}</strong>: un mes desde la aprobacion real. Si apruebas en abril, vences en mayo &mdash; no en julio. La fecha limite no es una fecha del calendario igual para todos.' },
+      { id: 's21', text: 'A partir de la fecha de aprobacion: generar la huella digital del fichero en D2 (Presentacion > Deposito Digital)' },
+      { id: 's21b', text: 'Firmar el fichero con certificado digital' },
+      { id: 's22', text: 'Presentar el deposito telematicamente en <a href="https://sede.registradores.org" target="_blank">sede.registradores.org</a>' },
+      { id: 's22b', text: '<strong>Elige bien entre Completa y Mixta, porque cambia lo que te queda por hacer.</strong> En la <strong>Completa</strong> el certificado de aprobacion va en PDF dentro del mismo envio y terminas aqui. En la <strong>Mixta</strong> solo mandas el .ZIP, y despues tienes que llevar o enviar al Registro el Certificado de Aprobacion, la Instancia de Presentacion, la Huella Digital y el Acuse de Recibo, con un plazo de quince dias desde la remision del fichero. Quien elige Mixta sin saberlo deja el deposito a medias.' },
+      { id: 's23', text: '<strong>No es una "tasa": son honorarios del registrador</strong> segun arancel, que el Registro Mercantil factura a la sociedad, mas unos 3 EUR por envio telematico del Colegio de Registradores. Y la factura <strong>lleva retencion de IRPF del 15%</strong> que la sociedad tiene que practicar e ingresar: si te quedas solo con el total que te dicen, pagas mal el modelo 111.' },
+      { id: 's24', text: 'Descargar y guardar el justificante de presentacion y el recibo de pago' },
+      { id: 's24b', text: '<strong>Si no te va el telematico, siguen existiendo dos vias mas:</strong> soporte digital (CD o DVD) presentado fisicamente en el Registro, y papel con los modelos oficiales en PDF editable. Pero cuidado con una trampa: <strong>imprimir la salida del D2 NO vale</strong> para presentar en papel.' },
+    ]
+  },
+  {
+    // Esta fase esta escrita desde el formulario real, con los numeros de casilla que
+    // se ven en pantalla. Por eso vale, y por eso caduca: la AEAT renumera casillas y
+    // reordena pantallas entre campanas. Comprueba cada casilla contra el formulario
+    // del ejercicio que estes declarando.
+    phase: 'FASE 5 — IMPUESTO DE SOCIEDADES (Modelo 200)',
+    deadline: 'Hasta el {{PLAZO_M200}} (6 meses y 25 dias desde el cierre)',
+    items: [
+      { id: 's25', text: 'Entrar en <a href="https://sede.agenciatributaria.gob.es" target="_blank">sede.agenciatributaria.gob.es</a> con certificado digital de la sociedad o del administrador, y abrir el formulario del Modelo 200 del ejercicio {{EJERCICIO}}' },
+      { id: 's25b', text: '<strong>Antes de empezar, dos comprobaciones.</strong> (1) El plazo acaba el <strong>{{PLAZO_M200}}</strong> inclusive: son 25 dias naturales despues de los 6 meses desde el cierre, y si cae en sabado, domingo o festivo se corre al siguiente dia habil. Si quieres domiciliar el pago, el plazo de domiciliacion cierra 5 dias antes. (2) Si tu sociedad se constituyo en escritura pero <strong>no estaba inscrita en el Registro Mercantil al cierre del ejercicio</strong>, no tributa por el Modelo 200 sino en regimen de atribucion de rentas. Es un caso real en constituciones de diciembre.' },
+      { id: 's26', text: 'Tipo de entidad: NO marcar ninguna casilla si eres una SL ordinaria (no es un tipo especial)' },
+      { id: 's26b', text: 'Regimenes aplicables: la casilla <strong>00006</strong> es "Incentivos entidad de reducida dimension". Marcala solo si cumples los requisitos de reducida dimension &mdash; <strong>compruebalo, no lo marques por inercia</strong>' },
+      { id: 's26c', text: 'Otros caracteres: <strong>00027</strong> (Base imponible negativa o cero) si es tu caso. <strong>CUIDADO con la casilla 00071</strong> (tipo de gravamen reducido de entidad de nueva creacion): una sociedad holding suele quedar EXCLUIDA de ese tipo, porque el art. 29.1 LIS exige realizar actividades economicas, excluye a las entidades patrimoniales y excluye a las que forman parte de un grupo del art. 42 del Codigo de Comercio. No marques 00071 sin que tu asesor te lo confirme.' },
+      { id: 's26d', text: 'INCN de los 12 meses anteriores: marcar el tramo que te corresponda' },
+      { id: 's26e', text: 'Periodo impositivo: inicio {{FECHA_CONST}} (o el 1 de enero si no es tu primer ejercicio), fin {{FECHA_CIERRE}}' },
+      { id: 's26f', text: 'Pulsar el boton "Aplicar" para confirmar los caracteres y abrir el formulario completo' },
+      { id: 's26g', text: 'Estados de cuentas: <strong>00052</strong> (Balance) y <strong>00055</strong> (PyG) en el modelo que te corresponda. El ECPN solo se deja sin marcar si de verdad estas exento de formularlo' },
+      { id: 's26h', text: 'Importacion de datos contables: "Continuar sin importar datos contables" si vas a rellenarlo a mano' },
+      { id: 's26i', text: 'Autoliquidacion rectificativa: en blanco si es la primera presentacion' },
+      { id: 's26j', text: 'Grupo fiscal, Grupo mercantil y Personal asalariado: rellena lo que te aplique. <strong>Si controlas tu filial, el apartado de grupo mercantil SI te aplica</strong> aunque no tengas grupo fiscal' },
+      { id: 's26k', text: 'B.1 Participaciones en otras entidades: NIF {{FILIAL_CIF}}, {{FILIAL}}, tu provincia, % {{PORCENTAJE}}, valor nominal {{VALOR_PART}}, valor en libros {{VALOR_PART}}, dividendos recibidos (0 si no ha repartido)' },
+      { id: 's26l', text: 'B.2 Participaciones en la declarante: NIF {{DNI}}, F si es persona fisica, {{ADMIN}}, tu provincia, nominal {{CAPITAL}}, % de participacion' },
+      { id: 's26m', text: 'Datos adicionales de la participada: en blanco si la participada es espanola' },
+      { id: 's26n', text: 'Establecimiento permanente en el extranjero: en blanco si no tienes' },
+      { id: 's26o', text: 'Titular real: NIF {{DNI}}, {{ADMIN}}, titularidad directa y su porcentaje. Si hay varios socios o cadenas de participacion indirecta, la identificacion del titular real es un analisis distinto: no copies el caso de un solo socio al 100%' },
+      { id: 's26p', text: 'Secretario del consejo de administracion: en blanco si no hay consejo' },
+      { id: 's27', text: 'BALANCE ACTIVO &mdash; Casilla <strong>00119</strong> (Instrumentos de patrimonio, inversiones en grupo/asociadas a l/p): {{VALOR_PART}} | <strong>00101</strong> (Activo no corriente): {{VALOR_PART}} | <strong>00177</strong> (Efectivo y otros activos liquidos): {{SALDO}} | <strong>00136</strong> (Activo corriente): {{SALDO}} | <strong>00180</strong> (TOTAL ACTIVO)' },
+      { id: 's27b', text: 'BALANCE PN Y PASIVO &mdash; Casilla <strong>00188</strong> (Capital escriturado): {{CAPITAL}} | <strong>00187</strong> (Capital): {{CAPITAL}} | <strong>00199</strong> (Resultado del ejercicio) | <strong>00186</strong> (Fondos propios) | <strong>00185</strong> (Patrimonio neto) | el total de PN mas Pasivo tiene que cuadrar con el Total Activo' },
+      { id: 's28', text: 'PyG: rellenar con tus importes reales. Si de verdad no hubo ni un ingreso ni un gasto, van a 0,00 &mdash; pero revisa comisiones bancarias y la factura del gestor antes de dar el cero por bueno' },
+      { id: 's29', text: 'Liquidacion: Base imponible | <strong>Tipo {{TIPO_IS}}%</strong> | Cuota integra | Cuota liquida | Resultado de la declaracion. El cuadro de tipos cambio para los periodos iniciados desde 2025: ademas del tipo general hay una escala para entidades con cifra de negocios inferior a un millon y un tipo propio para las de reducida dimension, y estan en una disposicion transitoria, no en el articulo. Confirma el tuyo.' },
+      { id: 's30', text: 'Presentar la declaracion. <strong>Es obligatoria aunque la sociedad este inactiva y salga a cero</strong>' },
+      { id: 's31', text: 'Descargar y guardar el justificante con el CSV de presentacion' },
+      { id: 's31b', text: '<strong>No olvides el modelo 232</strong> si tienes operaciones con tu filial: se presenta del 1 al 30 de noviembre. Umbrales: 250.000 EUR por entidad vinculada, 100.000 EUR en operaciones especificas y el 50% de la cifra de negocios. Trampa concreta: comprar o vender participaciones de la filial por mas de 100.000 EUR es operacion especifica y obliga a presentarlo aunque no llegues a los 250.000' },
+    ]
+  },
+  {
+    phase: 'FASE 6 — ARCHIVO DIGITAL',
+    deadline: 'Tras completar todo',
+    items: [
+      { id: 's34', text: 'Crear la carpeta "{{DEN}} - Cierre {{EJERCICIO}}" con todos los PDF firmados' },
+      { id: 's35', text: 'Guardar: Cuentas Anuales, Cert. Formulacion, Acta, Cert. Acuerdos' },
+      { id: 's36', text: 'Guardar: justificante de legalizacion de libros, justificante del deposito en el RM, factura del Registro, justificante del Modelo 200' },
+      { id: 's37', text: 'Guardar copia de la escritura de constitucion en la misma carpeta' },
+      { id: 's38', text: '<strong>Apunta en el calendario los dos plazos del ano que viene:</strong> la legalizacion de libros (4 meses desde el cierre) y, si cambia tu titular real en algun momento, los 10 dias para presentar la DITIR nueva. Son los dos que se escapan por no estar unidos al cierre de cuentas.' },
+    ]
+  }
+];
+
+function renderChecklist() {
+  const container = document.getElementById('mainChecklist');
+  const saved = JSON.parse(localStorage.getItem('cierre_cuentas_checklist') || '{}');
+  let totalDone = 0;
+  let totalItems = 0;
+
+  let html = '';
+  steps.forEach(phase => {
+    phase.items.forEach(item => {
+      totalItems++;
+      const done = saved[item.id] || false;
+      if (done) totalDone++;
+      html += `<div class="checklist-item ${done ? 'done' : ''}" data-id="${item.id}" onclick="toggleCheckPersist(this)">
+        <span class="icon">${done ? '&#9745;' : '&#9744;'}</span> ${fill(item.text)}
+      </div>`;
+    });
+  });
+  container.innerHTML = html;
+
+  // Update progress to include checklist
+  const pct = totalItems > 0 ? Math.round((totalDone / totalItems) * 100) : 0;
+  const el = document.getElementById('checkProgress');
+  if (el) el.textContent = `${totalDone} / ${totalItems} pasos completados`;
+}
+
+function toggleCheckPersist(item) {
+  const id = item.dataset.id;
+  const saved = JSON.parse(localStorage.getItem('cierre_cuentas_checklist') || '{}');
+  saved[id] = !saved[id];
+  localStorage.setItem('cierre_cuentas_checklist', JSON.stringify(saved));
+  item.classList.toggle('done');
+  const icon = item.querySelector('.icon');
+  icon.innerHTML = item.classList.contains('done') ? '&#9745;' : '&#9744;';
+  renderRuta();
+}
+
+function renderRuta() {
+  const el = document.getElementById('doc-ruta');
+  const saved = JSON.parse(localStorage.getItem('cierre_cuentas_checklist') || '{}');
+
+  let html = `
+    <h1>HOJA DE RUTA</h1>
+    <div class="doc-subtitle">Cierre de cuentas anuales ${vOr('f_ejercicio','EJERCICIO')} &mdash; ${vOr('f_denominacion','DENOMINACION')}</div>
+    <div class="doc-meta">Generado el ${new Date().toLocaleDateString('es-ES', {day:'numeric',month:'long',year:'numeric'})}</div>
+
+    <table style="margin-bottom:12px">
+      <thead><tr><th>Hito</th><th style="width:210px">Regla</th><th style="width:190px">Tu fecha l&iacute;mite</th><th style="width:110px">Estado</th></tr></thead>
+      <tbody>
+        <tr><td>Formulaci&oacute;n de cuentas</td><td style="font-size:11px;color:#777">3 meses desde el cierre (art. 253.1 LSC)</td><td>${fmtFecha(plazoFormular())}</td><td>${estadoPlazo(plazoFormular())}</td></tr>
+        <tr><td>Legalizaci&oacute;n de libros</td><td style="font-size:11px;color:#777">4 meses desde el cierre (art. 27 CCom)</td><td>${fmtFecha(plazoLibros())}</td><td>${estadoPlazo(plazoLibros())}</td></tr>
+        <tr><td><strong>Junta / decisi&oacute;n del socio &uacute;nico</strong></td><td style="font-size:11px;color:#777">6 meses desde el cierre (art. 164.1 LSC)</td><td><strong>${fmtFecha(plazoJunta())}</strong> <span style="font-size:11px;color:#777">(${diasRestantes()})</span></td><td>${estadoPlazo(plazoJunta())}</td></tr>
+        <tr><td>Dep&oacute;sito de cuentas en el RM</td><td style="font-size:11px;color:#777">1 mes desde la aprobaci&oacute;n REAL (art. 279.1 LSC)</td><td>${fmtFecha(plazoDeposito())}</td><td>${estadoPlazo(plazoDeposito())}</td></tr>
+        <tr><td><strong>Modelo 200</strong></td><td style="font-size:11px;color:#777">6 meses + 25 d&iacute;as desde el cierre, al siguiente d&iacute;a h&aacute;bil</td><td><strong>${fmtFecha(plazoM200())}</strong> <span style="font-size:11px;color:#777">(${diasRestantes200()})</span></td><td>${estadoPlazo(plazoM200())}</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:#777;margin-bottom:24px">
+      Estas fechas se calculan con <strong>tu</strong> fecha de cierre y <strong>tu</strong> fecha de
+      aprobaci&oacute;n: cambia los campos del formulario y la tabla se recalcula. El c&aacute;lculo
+      salta s&aacute;bados y domingos, pero <strong>no conoce los festivos</strong> de tu comunidad ni
+      de tu municipio: si tu l&iacute;mite cae cerca de un festivo, c&oacute;mpruebalo. Y ojo con el
+      dep&oacute;sito: el mes corre desde el d&iacute;a en que apruebas de verdad, no desde el
+      &uacute;ltimo d&iacute;a que ten&iacute;as para aprobar.
+    </p>
+  `;
+
+  steps.forEach(phase => {
+    const phaseTotal = phase.items.length;
+    const phaseDone = phase.items.filter(i => saved[i.id]).length;
+    const phasePct = Math.round((phaseDone / phaseTotal) * 100);
+    const phaseColor = phasePct === 100 ? '#00b894' : phasePct > 0 ? '#fdcb6e' : '#e17055';
+
+    html += `<h2 style="margin-top:28px;border-bottom:2px solid ${phaseColor};padding-bottom:6px">${phase.phase} <span style="float:right;font-size:13px;color:${phaseColor}">${phaseDone}/${phaseTotal}</span></h2>`;
+    html += `<p style="font-size:11px;color:#777;margin-bottom:12px">Plazo: ${fill(phase.deadline)}</p>`;
+    html += '<table><thead><tr><th style="width:30px">#</th><th>Paso</th><th style="width:80px;text-align:center">Estado</th><th style="width:40px;text-align:center">&#10003;</th></tr></thead><tbody>';
+
+    phase.items.forEach((item, idx) => {
+      const done = saved[item.id] || false;
+      const bg = done ? '#f0faf6' : '#fff';
+      const check = done ? '<span style="color:#00b894;font-weight:700">HECHO</span>' : '<span style="color:#999">Pendiente</span>';
+      const checkbox = done
+        ? '<span style="cursor:pointer;font-size:18px;color:#00b894" onclick="toggleStep(\'' + item.id + '\')">&#9745;</span>'
+        : '<span style="cursor:pointer;font-size:18px;color:#ccc" onclick="toggleStep(\'' + item.id + '\')">&#9744;</span>';
+      html += `<tr style="background:${bg}"><td style="width:30px;text-align:center;font-weight:600;color:#777">${idx + 1}</td><td>${fill(item.text)}</td><td style="width:80px;text-align:center;font-size:11px">${check}</td><td style="width:40px;text-align:center">${checkbox}</td></tr>`;
+    });
+
+    html += '</tbody></table>';
+  });
+
+  html += `
+    <div style="margin-top:32px;padding:16px;background:#f8f8fc;border:1px solid #ddd;border-radius:6px">
+      <p style="font-weight:700;margin-bottom:8px">Requisitos previos (aseg&uacute;rate de tener):</p>
+      <p>&mdash; <strong>Certificado digital</strong> vigente (persona f&iacute;sica o de la sociedad) para acceder a registradores.org y sede AEAT</p>
+      <p>&mdash; <strong>Programa D2</strong> descargado de <a href="https://sede.registradores.org/sede/sede-corpme-web/informacion-y-ayuda/documentacion-descargas/registro-mercantil" target="_blank">sede.registradores.org — Documentación y Descargas</a> (aplicaci&oacute;n de escritorio)</p>
+      <p>&mdash; <strong>Libro de Actas</strong> legalizado (si no lo tienes, legalizalo en la Fase 3)</p>
+      <p>&mdash; <strong>Escritura de constituci&oacute;n</strong> de ${vOr('f_denominacion','DENOMINACION')} (de ah&iacute; salen notario, protocolo, tomo, folio, hoja e IRUS)</p>
+    </div>
+
+    ${bloqueRetrasos()}
+  `;
+
+  el.innerHTML = html;
+}
+
+// --- Render ---
+function render() {
+  const denVal = v('f_denominacion');
+  document.title = denVal ? `Cuentas Anuales ${ejercicioTxt()} — ${denVal}` : `Cuentas Anuales ${ejercicioTxt()}`;
+  const ident = document.getElementById('sidebarIdent');
+  if (ident) ident.innerHTML = (denVal || '<span class="placeholder">[DENOMINACION]</span>') + ' &mdash; ' + (v('f_cif') || '&mdash;');
+  const tit = document.getElementById('sidebarTitulo');
+  if (tit) tit.textContent = 'CUENTAS ANUALES ' + ejercicioTxt();
+  renderRuta();
+  renderCuentas();
+  renderFormulacion();
+  renderActa();
+  renderCertificado();
+  renderLibroDiario();
+  renderLibroInventarios();
+  renderLibroActas();
+  renderLibroSocios();
+  renderModelo200();
+  renderArchivo();
+  renderChecklist();
+}
+
+function renderCuentas() {
+  const el = document.getElementById('doc-cuentas');
+  const den = vOr('f_denominacion','DENOMINACION');
+  const cif = vOr('f_cif','CIF');
+  const dom = vOr('f_domicilio','DOMICILIO');
+  const fechaConst = vOr('f_fecha_const','FECHA CONSTITUCION');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const cargo = vOr('f_cargo','CARGO');
+  const capital = vOr('f_capital','CAPITAL');
+  const vpart = vOr('f_valor_part','VALOR_PARTICIPACIONES');
+  const saldo = vOr('f_saldo','SALDO_BANCO');
+  const total = totalActivo();
+  const filial = vOr('f_filial','FILIAL');
+  const filialCif = vOr('f_filial_cif','CIF_FILIAL');
+  const porc = vOr('f_porcentaje','%');
+  const numPart = vOr('f_num_part','NUM_PART');
+  const valNom = vOr('f_valor_nominal','VALOR_NOM');
+  const ciudad = vOr('f_ciudad','CIUDAD');
+  const prov = vOr('f_provincia','PROVINCIA');
+  const notario = vOr('f_notario','NOTARIO');
+  const protocolo = vOr('f_protocolo','PROTOCOLO');
+  const tomo = vOr('f_tomo','TOMO');
+  const folio = vOr('f_folio','FOLIO');
+  const hoja = vOr('f_hoja','HOJA');
+  const fechaForm = formatDate(v('f_fecha_form'));
+  const dni = vOr('f_admin_dni','DNI');
+  const partFilial = vOr('f_part_filial','NUM_PART_FILIAL');
+
+  el.innerHTML = `
+    <h1>CUENTAS ANUALES DEL EJERCICIO ${ejercicioTxt()}</h1>
+    <div class="doc-subtitle">${den}</div>
+    <div class="doc-meta">
+      CIF: ${cif} &mdash; Domicilio: ${dom}<br>
+      Constituida el ${fechaConst} &mdash; CNAE ${vOr('f_cnae','CNAE')}<br>
+      ${cargo}: ${admin}
+    </div>
+
+    <h2>I. BALANCE DE SITUACI&Oacute;N A ${cierreMayus()}</h2>
+    <p style="font-size:11px;color:#777;font-style:italic">Modelo abreviado &mdash; Art. 257 de la Ley de Sociedades de Capital</p>
+
+    <h3>ACTIVO</h3>
+    <table>
+      <thead><tr><th>Concepto</th><th style="width:130px;text-align:right">Ejercicio ${ejercicioTxt()} (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A) ACTIVO NO CORRIENTE</strong></td><td class="num"><strong>${vpart}</strong></td></tr>
+        <tr><td style="padding-left:20px">II. Inversiones en empresas del grupo y asociadas a largo plazo</td><td class="num">${vpart}</td></tr>
+        <tr><td style="padding-left:40px">1. Instrumentos de patrimonio</td><td class="num">${vpart}</td></tr>
+        <tr><td><strong>B) ACTIVO CORRIENTE</strong></td><td class="num"><strong>${saldo}</strong></td></tr>
+        <tr><td style="padding-left:20px">VII. Efectivo y otros activos l&iacute;quidos equivalentes</td><td class="num">${saldo}</td></tr>
+        <tr><td style="padding-left:40px">1. Tesorería</td><td class="num">${saldo}</td></tr>
+        <tr class="total"><td><strong>TOTAL ACTIVO (A+B)</strong></td><td class="num"><strong>${total}</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>PATRIMONIO NETO Y PASIVO</h3>
+    <table>
+      <thead><tr><th>Concepto</th><th style="width:130px;text-align:right">Ejercicio ${ejercicioTxt()} (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A) PATRIMONIO NETO</strong></td><td class="num"><strong>${totalPN()}</strong></td></tr>
+        <tr><td style="padding-left:20px">A-1) Fondos propios</td><td class="num">${totalPN()}</td></tr>
+        <tr><td style="padding-left:40px">I. Capital escriturado</td><td class="num">${capital}</td></tr>
+        <tr><td style="padding-left:40px">VII. Resultado del ejercicio</td><td class="num">${vOr('f_resultado','RESULTADO')}</td></tr>
+        <tr><td><strong>B) PASIVO NO CORRIENTE Y C) PASIVO CORRIENTE</strong></td><td class="num"><strong>${vOr('f_pasivo','PASIVO')}</strong></td></tr>
+        <tr class="total"><td><strong>TOTAL PATRIMONIO NETO Y PASIVO (A+B+C)</strong></td><td class="num"><strong>${totalPasivoYPN()}</strong></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:#777;margin-top:8px">
+      El pasivo va en una sola l&iacute;nea porque esta plantilla no desglosa vencimientos.
+      Si tienes deudas, desgl&oacute;salas entre pasivo no corriente y corriente antes de depositar.
+    </p>
+
+    <p style="font-size:11px;color:#777;margin-top:8px">${textoComparativas()}</p>
+
+    <h2>II. CUENTA DE P&Eacute;RDIDAS Y GANANCIAS DEL EJERCICIO ${ejercicioTxt()}</h2>
+    <p style="font-size:11px;color:#777;font-style:italic">Modelo abreviado &mdash; Art. 258 de la Ley de Sociedades de Capital</p>
+    <table>
+      <thead><tr><th>Concepto</th><th style="width:130px;text-align:right">Ejercicio ${ejercicioTxt()} (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td>1. Importe neto de la cifra de negocios</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr><td>4. Aprovisionamientos</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr><td>5. Otros ingresos de explotaci&oacute;n</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr><td>6. Gastos de personal</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr><td>7. Otros gastos de explotaci&oacute;n</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr><td>8. Amortizaci&oacute;n del inmovilizado</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr class="total"><td><strong>A.1) RESULTADO DE EXPLOTACI&Oacute;N</strong></td><td class="num"><strong><span class="placeholder">[COMPLETA]</span></strong></td></tr>
+        <tr><td>12. Ingresos financieros</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr><td>13. Gastos financieros</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr class="total"><td><strong>A.2) RESULTADO FINANCIERO</strong></td><td class="num"><strong><span class="placeholder">[COMPLETA]</span></strong></td></tr>
+        <tr class="total"><td><strong>A.3) RESULTADO ANTES DE IMPUESTOS</strong></td><td class="num"><strong><span class="placeholder">[COMPLETA]</span></strong></td></tr>
+        <tr><td>17. Impuestos sobre beneficios</td><td class="num"><span class="placeholder">[COMPLETA]</span></td></tr>
+        <tr class="total"><td><strong>A.4) RESULTADO DEL EJERCICIO</strong></td><td class="num"><strong>${vOr('f_resultado','RESULTADO')}</strong></td></tr>
+      </tbody>
+    </table>
+    ${aviso('<strong>Esta tabla no se rellena sola.</strong> La herramienta conoce tu resultado ' +
+      'porque lo has escrito, pero no tus ingresos ni tus gastos: el desglose lo tienes que poner ' +
+      'tu. Salen como [COMPLETA] a proposito &mdash; un hueco se ve, un cero no.')}
+
+    <h2>III. MEMORIA DEL EJERCICIO ${ejercicioTxt()}</h2>
+    <p style="font-size:11px;color:#777;font-style:italic">${marcoContable()}</p>
+
+    <h3>1. Actividad de la empresa</h3>
+    <p><strong>${den}</strong>, con CIF ${cif} y domicilio social en ${dom}, fue constituida mediante escritura pública otorgada el ${fechaConst} ante el Notario de ${ciudad}, D. ${notario}, con el n&uacute;mero ${protocolo} de su protocolo, e inscrita en el Registro Mercantil de ${prov}, Tomo ${tomo}, Folio ${folio}, Hoja ${hoja}.</p>
+    <p>Su actividad principal consiste en la tenencia y gesti&oacute;n de participaciones en sociedades (CNAE ${vOr('f_cnae','CNAE')}).</p>
+    ${parrafoUnipersonal(admin, dni)}
+    <p>La sociedad posee ${partFilial} participaciones sociales de la mercantil ${filial}, con CIF ${filialCif}, n&uacute;meros 1 al ${partFilial}, ambos inclusive, representativas del ${porc}% de su capital social,${textoAdquisicion(vpart)}</p>
+    <p>El presente ejercicio comprende desde la fecha de constituci&oacute;n (${fechaConst}) hasta el ${cierreTxt()}.${textoComparativas()}</p>
+    <p>La sociedad no ha tenido empleados durante el ejercicio.</p>
+
+    <h3>2. Bases de presentaci&oacute;n de las cuentas anuales</h3>
+    <p><strong>2.1. Imagen fiel.</strong> Las cuentas anuales se han preparado a partir de los registros contables de la sociedad y se presentan de acuerdo con la legislaci&oacute;n mercantil vigente y con las normas del marco contable que resulte aplicable (<span class="placeholder">[MARCO CONTABLE: ver el encabezado de esta memoria]</span>), con el objeto de mostrar la imagen fiel del patrimonio, de la situaci&oacute;n financiera y de los resultados de la sociedad.</p>
+    <p><strong>2.2. Principios contables.</strong> No se ha producido ninguna aplicaci&oacute;n excepcional de principios contables. Se han seguido los principios contables establecidos en el marco contable aplicable.</p>
+    <p><strong>2.3. Aspectos criticos de la valoraci&oacute;n y estimaci&oacute;n de la incertidumbre.</strong> No existen estimaciones contables significativas ni incertidumbres relevantes dada la naturaleza y simplicidad de las operaciones realizadas.</p>
+    <p><strong>2.4. Comparaci&oacute;n de la informaci&oacute;n.</strong>${textoComparativas()}</p>
+    ${apartadoMemoriaMicro()}
+
+    <h3>3. Normas de registro y valoraci&oacute;n</h3>
+    <p><strong>3.1. Inversiones en empresas ${grupoOAsoc()}.</strong> Las participaciones en empresas ${grupoOAsoc()} se valoran inicialmente al coste, que comprende el precio de adquisici&oacute;n. Posteriormente, se valoran al coste menos, en su caso, el importe acumulado de las correcciones valorativas por deterioro. Al cierre del ejercicio no se han identificado indicios de deterioro en el valor de las participaciones.</p>
+    <p><strong>3.2. Efectivo y otros activos l&iacute;quidos equivalentes.</strong> Se registran por su valor nominal. No existen restricciones a la disponibilidad de estos saldos.</p>
+    <p><strong>3.3. Impuesto sobre beneficios.</strong> El gasto por Impuesto sobre Sociedades se reconoce conforme a la normativa aplicable. ${parseNum(v('f_resultado')) > 0 ? '<span class="placeholder">[COMPLETA: con resultado positivo, indica la base imponible y la cuota devengada]</span>' : 'No se ha devengado cuota alguna al no haberse generado base imponible positiva.'}</p>
+
+    <h3>4. Inmovilizado material, intangible e inversiones inmobiliarias</h3>
+    <p>La sociedad no posee inmovilizado material, intangible ni inversiones inmobiliarias.</p>
+
+    <h3>5. Inversiones financieras &mdash; Empresas ${grupoOAsoc()}</h3>
+    <table>
+      <thead><tr><th>Sociedad participada</th><th>CIF</th><th>% Part.</th><th style="text-align:right">Coste (EUR)</th><th style="text-align:right">Deterioro</th><th style="text-align:right">Valor neto (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td>${filial}</td><td>${filialCif}</td><td>${porc}%</td><td class="num">${vpart}</td><td class="num">0,00</td><td class="num">${vpart}</td></tr>
+      </tbody>
+    </table>
+    <p>${chk('f_aport_no_dineraria')
+        ? 'Las participaciones fueron adquiridas mediante aportaci&oacute;n no dineraria en el acto de constituci&oacute;n de la sociedad.'
+        : 'Las participaciones figuran por su coste de adquisici&oacute;n. <span class="placeholder">[INDICA COMO Y CUANDO LAS ADQUIRISTE]</span>'} No se han producido movimientos durante el ejercicio distintos a la adquisici&oacute;n inicial.</p>
+
+    <h3>6. Tesorería</h3>
+    <table>
+      <thead><tr><th>Concepto</th><th style="text-align:right">Importe (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td>Cuentas corrientes bancarias</td><td class="num">${saldo}</td></tr>
+        <tr class="total"><td><strong>Total efectivo</strong></td><td class="num"><strong>${saldo}</strong></td></tr>
+      </tbody>
+    </table>
+    <p>No existen restricciones a la disponibilidad de estos saldos. El saldo de tesorer&iacute;a corresponde a la aportaci&oacute;n dineraria realizada en el acto fundacional.</p>
+
+    <h3>7. Fondos propios</h3>
+    <table>
+      <thead><tr><th>Concepto</th><th style="text-align:right">Capital (EUR)</th><th style="text-align:right">Resultado (EUR)</th><th style="text-align:right">Total (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td>Saldo al inicio (constituci&oacute;n)</td><td class="num">${capital}</td><td class="num">&mdash;</td><td class="num">${capital}</td></tr>
+        <tr><td>Resultado del ejercicio</td><td class="num">&mdash;</td><td class="num">${vOr('f_resultado','RESULTADO')}</td><td class="num">${vOr('f_resultado','RESULTADO')}</td></tr>
+        <tr class="total"><td><strong>Saldo al cierre</strong></td><td class="num"><strong>${capital}</strong></td><td class="num"><strong>${vOr('f_resultado','RESULTADO')}</strong></td><td class="num"><strong>${totalPN()}</strong></td></tr>
+      </tbody>
+    </table>
+    <p>El capital social asciende a ${capital} EUR, dividido en ${numPart} participaciones sociales de ${valNom} EUR de valor nominal cada una, numeradas correlativamente del 1 al ${numPart}, totalmente suscritas y desembolsadas${isUnipersonal() ? ' por el socio &uacute;nico' : ''}.</p>
+    ${textoDesembolso(vpart, saldo, filial, capital)}
+
+    <h3>8. Situaci&oacute;n fiscal</h3>
+    <p>La sociedad est&aacute; sujeta al Impuesto sobre Sociedades. El tipo impositivo aplicable es del ${tipoISTxt()}.</p>
+    ${avisoTipoReducido()}
+    <p>El resultado del ejercicio ${ejercicioTxt()} ha sido de ${vOr('f_resultado','RESULTADO')} EUR. La base imponible y la cuota resultantes dependen de los ajustes fiscales que correspondan: revisa este apartado con tu asesor antes de depositar.</p>
+    <p>No existen contingencias fiscales ni litigios en curso con la Administraci&oacute;n tributaria.</p>
+    ${parrafoRegimenEspecial()}
+
+    <h3>9. Operaciones con partes vinculadas</h3>
+    <p>Las &uacute;nicas operaciones con partes vinculadas realizadas durante el ejercicio corresponden a:</p>
+    <p>&mdash; Aportaci&oacute;n de capital social por importe total de ${capital} EUR${chk('f_aport_no_dineraria') ? ' (' + vpart + ' EUR en aportaci&oacute;n no dineraria y ' + saldo + ' EUR en aportaci&oacute;n dineraria)' : ''}.</p>
+    <p>No se han realizado operaciones comerciales ni financieras con partes vinculadas distintas de la aportaci&oacute;n fundacional.</p>
+
+    <h3>10. Otra informaci&oacute;n</h3>
+    <p>&mdash; La sociedad no tiene compromisos ni contingencias a la fecha de cierre del ejercicio.</p>
+    <p>&mdash; No se han producido hechos posteriores al cierre que requieran ajuste o menci&oacute;n en las presentes cuentas anuales.</p>
+    <p>&mdash; La retribuci&oacute;n del &oacute;rgano de administraci&oacute;n durante el ejercicio ha sido de 0,00 EUR. El cargo de administrador es gratuito.</p>
+    <p>&mdash; No existen anticipos ni cr&eacute;ditos concedidos al personal de alta direcci&oacute;n ni a los miembros del &oacute;rgano de administraci&oacute;n.</p>
+
+    <h3>11. Informaci&oacute;n sobre el per&iacute;odo medio de pago a proveedores</h3>
+    <p>De conformidad con la Ley 15/2010, se informa que la sociedad no ha realizado operaciones comerciales con proveedores durante el ejercicio, por lo que no resulta aplicable la informaci&oacute;n sobre plazos de pago.</p>
+
+    ${aviso('<strong>Lo que esta memoria afirma sin haberte preguntado nada.</strong> ' +
+      'Son frases escritas en afirmativo: no parpadean en rojo y no se ven al repasar. ' +
+      'Leelas una a una y borra o corrige las que no sean verdad en tu caso.<br>' +
+      '&mdash; que la sociedad no ha tenido empleados<br>' +
+      '&mdash; que no posee inmovilizado material, intangible ni inversiones inmobiliarias<br>' +
+      '&mdash; que no se han identificado indicios de deterioro en las participaciones<br>' +
+      '&mdash; que no existen contingencias fiscales ni litigios con la Administracion<br>' +
+      '&mdash; que no hay compromisos ni contingencias al cierre, ni hechos posteriores<br>' +
+      '&mdash; que el cargo de administrador es gratuito y su retribucion fue de 0,00 EUR<br>' +
+      '&mdash; que no hubo operaciones comerciales con proveedores<br>' +
+      '&mdash; que la numeracion de las participaciones es correlativa del 1 al total')}
+
+    <div class="signature">
+      <p><strong>Fecha de formulaci&oacute;n:</strong> ${fechaForm}</p>
+      <p>El administrador:</p>
+      <div class="line"></div>
+      <p class="name">Fdo.: ${admin}</p>
+      <p>${cargo}</p>
+    </div>
+  `;
+}
+
+function renderFormulacion() {
+  const el = document.getElementById('doc-cert-form');
+  const den = vOr('f_denominacion','DENOMINACION');
+  const cif = vOr('f_cif','CIF');
+  const dom = vOr('f_domicilio','DOMICILIO');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const dni = vOr('f_admin_dni','DNI');
+  const cargo = vOr('f_cargo','CARGO');
+  const fechaForm = formatDate(v('f_fecha_form'));
+  const ciudad = vOr('f_ciudad','CIUDAD');
+
+  el.innerHTML = `
+    <h1>CERTIFICADO DE FORMULACI&Oacute;N<br>DE CUENTAS ANUALES</h1>
+    <div class="doc-meta">${den} &mdash; CIF: ${cif}</div>
+
+    <p>D. <strong>${admin}</strong>, mayor de edad, con DNI ${dni}, en su condici&oacute;n de <strong>${cargo}</strong> de la sociedad <strong>${den}</strong>, con CIF ${cif} y domicilio social en ${dom},</p>
+
+    <div class="certifica">CERTIFICA</div>
+
+    <p>Que en el ejercicio de sus funciones y en cumplimiento de lo dispuesto en los art&iacute;culos 253 y siguientes de la Ley de Sociedades de Capital, con fecha <strong>${fechaForm}</strong> ha procedido a formular las cuentas anuales de la sociedad correspondientes al ejercicio cerrado a ${cierreTxt()}, las cuales comprenden:</p>
+
+    <p style="padding-left:20px">1. Balance de situaci&oacute;n<br>2. Cuenta de p&eacute;rdidas y ganancias<br>3. Memoria</p>
+
+    <p>Dichas cuentas anuales han sido firmadas por el administrador de la sociedad conforme a lo establecido en el art&iacute;culo 253 de la Ley de Sociedades de Capital.</p>
+
+    ${parrafoAuditoria()}
+    ${parrafoMicro()}
+
+    <p>La propuesta de aplicaci&oacute;n del resultado del ejercicio es la siguiente:</p>
+    <table>
+      <thead><tr><th>Concepto</th><th style="text-align:right">Importe (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td>Resultado del ejercicio</td><td class="num">${vOr('f_resultado','RESULTADO')}</td></tr>
+      </tbody>
+    </table>
+
+    <p>Y para que conste a los efectos oportunos, firmo el presente certificado.</p>
+
+    <div class="signature">
+      <p>En ${ciudad}, a ${fechaForm}.</p>
+      <div class="line"></div>
+      <p class="name">Fdo.: ${admin}</p>
+      <p>${cargo} de ${den}</p>
+    </div>
+  `;
+}
+
+function renderActa() {
+  const el = document.getElementById('doc-acta');
+  const den = vOr('f_denominacion','DENOMINACION');
+  const cif = vOr('f_cif','CIF');
+  const dom = vOr('f_domicilio','DOMICILIO');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const adminDom = vOr('f_admin_dom','DOMICILIO ADMIN');
+  const dni = vOr('f_admin_dni','DNI');
+  const cargo = vOr('f_cargo','CARGO');
+  const ciudad = vOr('f_ciudad','CIUDAD');
+  const prov = vOr('f_provincia','PROVINCIA');
+  const numPart = vOr('f_num_part','NUM_PART');
+  const fechaConst = vOr('f_fecha_const','FECHA CONSTITUCION');
+  const fechaForm = formatDate(v('f_fecha_form'));
+  const fechaJunta = formatDate(v('f_fecha_junta'));
+  const uni = isUnipersonal();
+
+  // Acuerdos comunes (iguales para ambos modos)
+  const acuerdos = `
+    <p class="acuerdo">PRIMERA.&mdash; Aprobaci&oacute;n de las cuentas anuales del ejercicio ${ejercicioTxt()}</p>
+    <p>Se aprueban las cuentas anuales de la sociedad correspondientes al ejercicio comprendido entre la fecha de constituci&oacute;n (${fechaConst}) y el ${cierreTxt()}, que comprenden el balance de situaci&oacute;n, la cuenta de p&eacute;rdidas y ganancias y la memoria, formuladas por el ${cargo} con fecha ${fechaForm}, y que arrojan un resultado del ejercicio de ${resultadoEnLetra()}.</p>
+    <p class="acuerdo">SEGUNDA.&mdash; Aplicaci&oacute;n del resultado del ejercicio</p>
+    ${textoAplicacionResultado()}
+    <p class="acuerdo">TERCERA.&mdash; Aprobaci&oacute;n de la gesti&oacute;n social</p>
+    <p>Se aprueba la gesti&oacute;n llevada a cabo por el &oacute;rgano de administraci&oacute;n durante el ejercicio ${ejercicioTxt()}.</p>
+    <p class="acuerdo">CUARTA.&mdash; Dep&oacute;sito de cuentas anuales en el Registro Mercantil</p>
+    <p>Se faculta al ${cargo}, D. ${admin}, para que proceda al dep&oacute;sito de las cuentas anuales aprobadas en el Registro Mercantil de ${prov}, conforme a lo dispuesto en el art&iacute;culo 279 de la Ley de Sociedades de Capital, y para realizar cuantas gestiones sean necesarias para la plena efectividad de los acuerdos adoptados, incluyendo la presentaci&oacute;n telem&aacute;tica del dep&oacute;sito y el pago de las tasas correspondientes.</p>
+  `;
+
+  if (uni) {
+    el.innerHTML = `
+      <h1>DECISIONES DEL SOCIO &Uacute;NICO</h1>
+      <div class="doc-subtitle">Art&iacute;culo 15 de la Ley de Sociedades de Capital</div>
+      <div class="doc-meta">${den} &mdash; CIF: ${cif}</div>
+      <p>En ${ciudad}, a ${fechaJunta}.</p>
+      <p>D. <strong>${admin}</strong>, mayor de edad, con DNI ${dni}, con domicilio en ${adminDom}, en su condici&oacute;n de <strong>socio &uacute;nico</strong> de la sociedad <strong>${den}</strong>, con CIF ${cif}, titular de la totalidad de las ${numPart} participaciones sociales en que se divide el capital social, numeradas del 1 al ${numPart}, ambos inclusive, representativas del 100% del capital social, adopta las siguientes decisiones:</p>
+      ${acuerdos}
+      <p>Las presentes decisiones se transcriben al Libro de Actas de la sociedad, debidamente legalizado.</p>
+      <div class="signature"><div class="line"></div><p class="name">Fdo.: ${admin}</p><p>Socio &uacute;nico</p></div>
+    `;
+  } else {
+    // Junta General - formato pluripersonal
+    const sociosRows = socios.map(s =>
+      `<tr><td>${s.nombre || '[NOMBRE]'}</td><td>${s.dni || '[DNI]'}</td><td>${s.participaciones || '[NUM]'}</td><td>${s.porcentaje || '[%]'}</td></tr>`
+    ).join('');
+
+    el.innerHTML = `
+      <h1>ACTA DE LA JUNTA GENERAL ORDINARIA</h1>
+      <div class="doc-subtitle">${den} &mdash; CIF: ${cif}</div>
+      <div class="doc-meta">Junta Universal &mdash; Art&iacute;culo 178 de la Ley de Sociedades de Capital</div>
+      <p>En ${ciudad}, a ${fechaJunta}, siendo las ______ horas, se re&uacute;ne la Junta General Ordinaria de la sociedad <strong>${den}</strong>, con CIF ${cif}, en el domicilio social sito en ${dom}, con car&aacute;cter de <strong>Junta Universal</strong>, de conformidad con el art&iacute;culo 178 de la Ley de Sociedades de Capital.</p>
+      <h3>Asistentes</h3>
+      <table>
+        <thead><tr><th>Socio</th><th>DNI</th><th>Participaciones</th><th>% Capital</th></tr></thead>
+        <tbody>${sociosRows}</tbody>
+      </table>
+      <p>Estando presente/representado el 100% del capital social, y aceptando por unanimidad la celebraci&oacute;n de la Junta y el orden del d&iacute;a propuesto, act&uacute;a como <strong>Presidente</strong> D. ${socios[0]?.nombre || '[PRESIDENTE]'} y como <strong>Secretario</strong> D. ${socios.length > 1 ? (socios[1]?.nombre || '[SECRETARIO]') : '[SECRETARIO]'}.</p>
+      <h3>Orden del d&iacute;a</h3>
+      <p>1. Examen y aprobaci&oacute;n de las cuentas anuales del ejercicio ${ejercicioTxt()}<br>
+      2. Aprobaci&oacute;n de la aplicaci&oacute;n del resultado<br>
+      3. Aprobaci&oacute;n de la gesti&oacute;n del &oacute;rgano de administraci&oacute;n<br>
+      4. Dep&oacute;sito de cuentas anuales en el Registro Mercantil<br>
+      5. Aprobaci&oacute;n del acta</p>
+      ${acuerdos}
+      <p>Todos los acuerdos fueron aprobados por <strong>unanimidad</strong>.</p>
+      <p><strong>APROBACI&Oacute;N DEL ACTA.</strong> Se aprueba el acta de la presente Junta por unanimidad.</p>
+      <p>Y no habiendo m&aacute;s asuntos que tratar, se levanta la sesi&oacute;n a las ______ horas del d&iacute;a indicado, de todo lo cual, como Secretario, doy fe.</p>
+      <div class="signature">
+        <p><strong>El Secretario:</strong></p><div class="line"></div><p class="name">Fdo.: ${socios.length > 1 ? (socios[1]?.nombre || '[SECRETARIO]') : '[SECRETARIO]'}</p>
+      </div>
+      <div class="signature" style="margin-top:24px">
+        <p><strong>Vto. Bno. El Presidente:</strong></p><div class="line"></div><p class="name">Fdo.: ${socios[0]?.nombre || '[PRESIDENTE]'}</p>
+      </div>
+    `;
+  }
+}
+
+function renderCertificado() {
+  const el = document.getElementById('doc-cert-acuerdos');
+  const den = vOr('f_denominacion','DENOMINACION');
+  const cif = vOr('f_cif','CIF');
+  const dom = vOr('f_domicilio','DOMICILIO');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const cargo = vOr('f_cargo','CARGO');
+  const ciudad = vOr('f_ciudad','CIUDAD');
+  const prov = vOr('f_provincia','PROVINCIA');
+  const fechaConst = vOr('f_fecha_const','FECHA CONSTITUCION');
+  const fechaJunta = formatDate(v('f_fecha_junta'));
+
+  el.innerHTML = `
+    <h1>CERTIFICADO DE ACUERDOS SOCIALES</h1>
+    <div class="doc-subtitle">Para el depósito de cuentas en el Registro Mercantil</div>
+    <div class="doc-meta">${den} &mdash; CIF: ${cif}</div>
+
+    <p>D. <strong>${admin}</strong>, en su condici&oacute;n de <strong>${cargo}</strong> de la sociedad <strong>${den}</strong>, con CIF ${cif} y domicilio social en ${dom},</p>
+
+    <div class="certifica">CERTIFICA</div>
+
+    <p><strong>PRIMERO.&mdash;</strong> Que con fecha <strong>${fechaJunta}</strong> ${isUnipersonal() ? 'el socio &uacute;nico de la sociedad adopt&oacute; las decisiones' : 'se celebr&oacute; la Junta General Ordinaria de la sociedad, con car&aacute;cter de Junta Universal, en la que se adoptaron los acuerdos'} que a continuaci&oacute;n se detallan, constando ${isUnipersonal() ? 'las mismas' : 'los mismos'} debidamente ${isUnipersonal() ? 'transcritas' : 'transcritos'} en el Libro de Actas de la sociedad.</p>
+
+    <p><strong>SEGUNDO.&mdash;</strong> Que entre las decisiones adoptadas figuran las siguientes:</p>
+
+    <p>1. <strong>Aprobaci&oacute;n de las cuentas anuales</strong> del ejercicio comprendido entre el ${fechaConst} y el ${cierreTxt()}, integradas por el balance de situaci&oacute;n, la cuenta de p&eacute;rdidas y ganancias y la memoria.</p>
+
+    <p>2. <strong>Aplicaci&oacute;n del resultado del ejercicio:</strong> El resultado del ejercicio ha sido de ${vOr('f_resultado','RESULTADO')} EUR.</p>
+
+    <p>3. <strong>Aprobaci&oacute;n de la gesti&oacute;n social</strong> del &oacute;rgano de administraci&oacute;n.</p>
+
+    <p><strong>TERCERO.&mdash;</strong> Que ${isUnipersonal() ? 'las citadas decisiones fueron adoptadas por el socio &uacute;nico en ejercicio de las competencias de la Junta General' : 'los citados acuerdos fueron adoptados por unanimidad en Junta General con car&aacute;cter de Universal, con asistencia del 100% del capital social'}, constando debidamente ${isUnipersonal() ? 'transcritas' : 'transcritos'} en el Libro de Actas de la sociedad.</p>
+
+    <p><strong>CUARTO.&mdash;</strong> Que las cuentas anuales que se acompanan al presente certificado para su depósito en el Registro Mercantil son copia fiel de las aprobadas.</p>
+
+    ${apartadosCertificado(4)}
+
+    <p>Y para que conste y surta los efectos oportunos ante el Registro Mercantil de ${prov}, expido el presente certificado.</p>
+
+    <div class="signature">
+      <p>En ${ciudad}, a ${fechaJunta}.</p>
+      <div class="line"></div>
+      <p class="name">Fdo.: ${admin}</p>
+      <p>${cargo} de ${den}</p>
+    </div>
+  `;
+}
+
+// --- Libros ---
+function renderLibroDiario() {
+  const el = document.getElementById('doc-libro-diario');
+  const fechaConst = vOr('f_fecha_const','FECHA');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const notario = vOr('f_notario','NOTARIO');
+  const protocolo = vOr('f_protocolo','PROTOCOLO');
+  const ciudad = vOr('f_ciudad','CIUDAD');
+  el.innerHTML = `
+    <h1>LIBRO DIARIO</h1>
+    <div class="doc-subtitle">${vOr('f_denominacion','DENOMINACION')}</div>
+    <div class="doc-meta">CIF: ${vOr('f_cif','CIF')} &mdash; Ejercicio ${vOr('f_ejercicio','EJERCICIO')} (del ${fechaConst} al ${vOr('f_fecha_cierre','FECHA DE CIERRE')})</div>
+    <h2>Asiento 1 &mdash; Asiento de apertura</h2>
+    <p>Fecha: ${fechaConst}</p>
+    <p>Concepto: Constituci&oacute;n de la sociedad mediante escritura p&uacute;blica otorgada ante el Notario de ${ciudad}, D. ${notario}, con el n&uacute;mero ${protocolo} de su protocolo. ${textoAportacion()}</p>
+    <table>
+      <thead><tr><th style="width:70px">Cuenta</th><th>Descripci&oacute;n</th><th style="width:110px;text-align:right">Debe (EUR)</th><th style="width:110px;text-align:right">Haber (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td>${cuentaCodigo()}</td><td>${cuentaNombre()}</td><td class="num">${vOr('f_valor_part','VALOR PARTICIPACIONES')}</td><td class="num"></td></tr>
+        <tr><td>572</td><td>Bancos e instituciones de cr&eacute;dito c/c vista, euros</td><td class="num">${vOr('f_saldo','SALDO')}</td><td class="num"></td></tr>
+        <tr><td>100</td><td>Capital social</td><td class="num"></td><td class="num">${vOr('f_capital','CAPITAL')}</td></tr>
+        <tr class="total"><td colspan="2"><strong>TOTALES</strong></td><td class="num"><strong>${totalActivo()}</strong></td><td class="num"><strong>${totalPasivoYPN()}</strong></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:#777;font-style:italic">Si no se han registrado m&aacute;s asientos durante el ejercicio ${ejercicioTxt()} es porque no hubo m&aacute;s operaciones. Revisa comisiones bancarias, cuota del gestor y la factura de notar&iacute;a y registro antes de dar eso por bueno.</p>
+    <h2>Asiento 2 &mdash; Asiento de cierre</h2>
+    <p>Fecha: ${cierreTxt()}</p>
+    <p>Concepto: Cierre del ejercicio ${ejercicioTxt()}. Resultado del ejercicio: ${vOr('f_resultado','RESULTADO')} EUR.</p>
+    <table>
+      <thead><tr><th style="width:70px">Cuenta</th><th>Descripci&oacute;n</th><th style="width:110px;text-align:right">Debe (EUR)</th><th style="width:110px;text-align:right">Haber (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td>100</td><td>Capital social</td><td class="num">${vOr('f_capital','CAPITAL')}</td><td class="num"></td></tr>
+        <tr><td>${cuentaCodigo()}</td><td>${cuentaNombre()}</td><td class="num"></td><td class="num">${vOr('f_valor_part','VALOR PARTICIPACIONES')}</td></tr>
+        <tr><td>572</td><td>Bancos e instituciones de cr&eacute;dito c/c vista, euros</td><td class="num"></td><td class="num">${vOr('f_saldo','SALDO')}</td></tr>
+        <tr class="total"><td colspan="2"><strong>TOTALES</strong></td><td class="num"><strong>${totalActivo()}</strong></td><td class="num"><strong>${totalPasivoYPN()}</strong></td></tr>
+      </tbody>
+    </table>
+    <div class="signature"><p>El ${vOr('f_cargo','CARGO')}:</p><div class="line"></div><p class="name">Fdo.: ${admin}</p></div>
+  `;
+}
+
+function renderLibroInventarios() {
+  const el = document.getElementById('doc-libro-inventarios');
+  const fechaConst = vOr('f_fecha_const','FECHA');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const fechaForm = formatDate(v('f_fecha_form'));
+  const fechaJunta = formatDate(v('f_fecha_junta'));
+  el.innerHTML = `
+    <h1>LIBRO DE INVENTARIOS Y CUENTAS ANUALES</h1>
+    <div class="doc-subtitle">${vOr('f_denominacion','DENOMINACION')}</div>
+    <div class="doc-meta">CIF: ${vOr('f_cif','CIF')} &mdash; Ejercicio ${vOr('f_ejercicio','EJERCICIO')} (del ${fechaConst} al ${vOr('f_fecha_cierre','FECHA DE CIERRE')})</div>
+    <h2>1. Balance de apertura &mdash; ${fechaConst}</h2>
+    <table>
+      <thead><tr><th>Cuenta</th><th>Concepto</th><th style="width:120px;text-align:right">Importe (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td colspan="3" style="background:#f0f0f5;font-weight:600">ACTIVO</td></tr>
+        <tr><td>${cuentaCodigo()}</td><td>${cuentaNombre()}</td><td class="num">${vOr('f_valor_part','VALOR PARTICIPACIONES')}</td></tr>
+        <tr><td>572</td><td>Bancos e instituciones de cr&eacute;dito c/c vista, euros</td><td class="num">${vOr('f_saldo','SALDO')}</td></tr>
+        <tr class="total"><td colspan="2"><strong>TOTAL ACTIVO</strong></td><td class="num"><strong>${totalActivo()}</strong></td></tr>
+        <tr><td colspan="3" style="background:#f0f0f5;font-weight:600">PATRIMONIO NETO Y PASIVO</td></tr>
+        <tr><td>100</td><td>Capital social</td><td class="num">${vOr('f_capital','CAPITAL')}</td></tr>
+        <tr class="total"><td colspan="2"><strong>TOTAL PN Y PASIVO</strong></td><td class="num"><strong>${totalPasivoYPN()}</strong></td></tr>
+      </tbody>
+    </table>
+    <h2>2. Balance de cierre &mdash; ${cierreTxt()}</h2>
+    <p>No habi&eacute;ndose producido operaciones durante el ejercicio, el balance de cierre es id&eacute;ntico al balance de apertura.</p>
+    <table>
+      <thead><tr><th>Cuenta</th><th>Concepto</th><th style="width:120px;text-align:right">Importe (EUR)</th></tr></thead>
+      <tbody>
+        <tr><td colspan="3" style="background:#f0f0f5;font-weight:600">ACTIVO</td></tr>
+        <tr><td>${cuentaCodigo()}</td><td>${cuentaNombre()}</td><td class="num">${vOr('f_valor_part','VALOR PARTICIPACIONES')}</td></tr>
+        <tr><td>572</td><td>Bancos e instituciones de cr&eacute;dito c/c vista, euros</td><td class="num">${vOr('f_saldo','SALDO')}</td></tr>
+        <tr class="total"><td colspan="2"><strong>TOTAL ACTIVO</strong></td><td class="num"><strong>${totalActivo()}</strong></td></tr>
+        <tr><td colspan="3" style="background:#f0f0f5;font-weight:600">PATRIMONIO NETO Y PASIVO</td></tr>
+        <tr><td>100</td><td>Capital social</td><td class="num">${vOr('f_capital','CAPITAL')}</td></tr>
+        <tr><td>129</td><td>Resultado del ejercicio</td><td class="num">${vOr('f_resultado','RESULTADO')}</td></tr>
+        <tr class="total"><td colspan="2"><strong>TOTAL PN Y PASIVO</strong></td><td class="num"><strong>${totalPasivoYPN()}</strong></td></tr>
+      </tbody>
+    </table>
+    <h2>3. Cuentas anuales del ejercicio ${ejercicioTxt()}</h2>
+    <p>Las cuentas anuales completas (Balance, Cuenta de P&eacute;rdidas y Ganancias y Memoria) formuladas por el Administrador &Uacute;nico con fecha ${fechaForm} y aprobadas por el socio &uacute;nico con fecha ${fechaJunta}, se encuentran en el documento independiente que forma parte integrante de este Libro.</p>
+    <h3>Balance de situaci&oacute;n a ${cierreCorto()} (resumen)</h3>
+    <table>
+      <thead><tr><th>Concepto</th><th style="width:130px;text-align:right">EUR</th></tr></thead>
+      <tbody>
+        <tr><td>A) Activo no corriente &mdash; Instrumentos de patrimonio</td><td class="num">${vOr('f_valor_part','VALOR PARTICIPACIONES')}</td></tr>
+        <tr><td>B) Activo corriente &mdash; Tesorer&iacute;a</td><td class="num">${vOr('f_saldo','SALDO')}</td></tr>
+        <tr class="total"><td><strong>TOTAL ACTIVO</strong></td><td class="num"><strong>${totalActivo()}</strong></td></tr>
+        <tr><td>A) Patrimonio neto &mdash; Capital</td><td class="num">${vOr('f_capital','CAPITAL')}</td></tr>
+        <tr><td>A) Patrimonio neto &mdash; Resultado</td><td class="num">${vOr('f_resultado','RESULTADO')}</td></tr>
+        <tr class="total"><td><strong>TOTAL PN Y PASIVO</strong></td><td class="num"><strong>${totalPasivoYPN()}</strong></td></tr>
+      </tbody>
+    </table>
+    <h3>Resultado del ejercicio: ${vOr('f_resultado','RESULTADO')} EUR</h3>
+    <div class="signature"><p>El ${vOr('f_cargo','CARGO')}:</p><div class="line"></div><p class="name">Fdo.: ${admin}</p></div>
+  `;
+}
+
+function renderLibroActas() {
+  const el = document.getElementById('doc-libro-actas');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const adminDom = vOr('f_admin_dom','DOMICILIO');
+  const dni = vOr('f_admin_dni','DNI');
+  const fechaConst = vOr('f_fecha_const','FECHA');
+  const fechaForm = formatDate(v('f_fecha_form'));
+  const fechaJunta = formatDate(v('f_fecha_junta'));
+  const prov = vOr('f_provincia','PROVINCIA');
+  const ciudad = vOr('f_ciudad','CIUDAD');
+  el.innerHTML = `
+    <h1>LIBRO DE ACTAS</h1>
+    <div class="doc-subtitle">${vOr('f_denominacion','DENOMINACION')}</div>
+    <div class="doc-meta">CIF: ${vOr('f_cif','CIF')} &mdash; Ejercicio ${vOr('f_ejercicio','EJERCICIO')}</div>
+    ${isUnipersonal() ? '' : aviso('<strong>Has declarado varios socios y este libro no se adapta.</strong> ' +
+      'Lo que sigue esta redactado como decision de socio unico, y este es el documento que se ' +
+      'legaliza en el Registro. Reescribelo como acta de junta general antes de presentarlo.')}
+    <h2>Acta n.&ordm; 1 &mdash; ${isUnipersonal() ? 'Decisiones del socio &uacute;nico' : 'Junta general ordinaria'}</h2>
+    <p style="font-size:11px;color:#777;font-style:italic">${isUnipersonal() ? 'Art&iacute;culo 15' : 'Art&iacute;culo 164'} de la Ley de Sociedades de Capital</p>
+    <p>En ${ciudad}, a ${fechaJunta}.</p>
+    <p>D. <strong>${admin}</strong>, mayor de edad, con DNI ${dni}, con domicilio en ${adminDom}, en su condici&oacute;n de <strong>socio &uacute;nico</strong> de la sociedad <strong>${vOr('f_denominacion','DENOMINACION')}</strong>, con CIF ${vOr('f_cif','CIF')}, titular de la totalidad de las ${vOr('f_num_part','N. PARTICIPACIONES')} participaciones sociales en que se divide el capital social, numeradas del 1 al ${vOr('f_num_part','N. PARTICIPACIONES')}, ambos inclusive, representativas del 100% del capital social, adopta las siguientes decisiones:</p>
+    <p class="acuerdo">PRIMERA.&mdash; Aprobaci&oacute;n de las cuentas anuales del ejercicio ${ejercicioTxt()}</p>
+    <p>Se aprueban las cuentas anuales de la sociedad correspondientes al ejercicio comprendido entre la fecha de constituci&oacute;n (${fechaConst}) y el ${cierreTxt()}, que comprenden el balance de situaci&oacute;n, la cuenta de p&eacute;rdidas y ganancias y la memoria, formuladas por el ${vOr('f_cargo','CARGO')} con fecha ${fechaForm}, y que arrojan un resultado del ejercicio de ${resultadoEnLetra()}.</p>
+    <p class="acuerdo">SEGUNDA.&mdash; Aplicaci&oacute;n del resultado del ejercicio</p>
+    ${textoAplicacionResultado()}
+    <p class="acuerdo">TERCERA.&mdash; Aprobaci&oacute;n de la gesti&oacute;n social</p>
+    <p>Se aprueba la gesti&oacute;n llevada a cabo por el &oacute;rgano de administraci&oacute;n durante el ejercicio ${ejercicioTxt()}.</p>
+    <p class="acuerdo">CUARTA.&mdash; Dep&oacute;sito de cuentas anuales en el Registro Mercantil</p>
+    <p>Se faculta al Administrador &Uacute;nico, D. ${admin}, para que proceda al dep&oacute;sito de las cuentas anuales aprobadas en el Registro Mercantil de ${prov}, conforme a lo dispuesto en el art&iacute;culo 279 de la Ley de Sociedades de Capital, y para realizar cuantas gestiones sean necesarias para la plena efectividad de los acuerdos adoptados.</p>
+    <p>Las presentes decisiones se transcriben al Libro de Actas de la sociedad, debidamente legalizado.</p>
+    <div class="signature"><div class="line"></div><p class="name">Fdo.: ${admin}</p><p>Socio &uacute;nico</p></div>
+  `;
+}
+
+function renderLibroSocios() {
+  const el = document.getElementById('doc-libro-socios');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const adminDom = vOr('f_admin_dom','DOMICILIO');
+  const dni = vOr('f_admin_dni','DNI');
+  const dom = vOr('f_domicilio','DOMICILIO');
+  const fechaConst = vOr('f_fecha_const','FECHA');
+  const hoja = vOr('f_hoja','HOJA');
+  el.innerHTML = `
+    <h1>LIBRO REGISTRO DE SOCIOS</h1>
+    <div class="doc-subtitle">${vOr('f_denominacion','DENOMINACION')}</div>
+    <div class="doc-meta">CIF: ${vOr('f_cif','CIF')} &mdash; Domicilio: ${dom}</div>
+    <h2>Datos de la sociedad</h2>
+    <table>
+      <tbody>
+        <tr><td style="width:200px;font-weight:600">Denominaci&oacute;n social</td><td>${vOr('f_denominacion','DENOMINACION')}</td></tr>
+        <tr><td style="font-weight:600">CIF</td><td>${vOr('f_cif','CIF')}</td></tr>
+        <tr><td style="font-weight:600">Domicilio social</td><td>${dom}</td></tr>
+        <tr><td style="font-weight:600">Capital social</td><td>${vOr('f_capital','CAPITAL')} EUR</td></tr>
+        <tr><td style="font-weight:600">N.&ordm; total de participaciones</td><td>${vOr('f_num_part','N. PARTICIPACIONES')}</td></tr>
+        <tr><td style="font-weight:600">Valor nominal por participaci&oacute;n</td><td>${vOr('f_valor_nominal','VALOR NOMINAL')} EUR</td></tr>
+        <tr><td style="font-weight:600">Fecha de constituci&oacute;n</td><td>${fechaConst}</td></tr>
+        <tr><td style="font-weight:600">Registro Mercantil</td><td>${vOr('f_provincia','PROVINCIA')}, Hoja ${hoja}</td></tr>
+      </tbody>
+    </table>
+    <h2>Registro de socios</h2>
+    <table>
+      <thead><tr><th>Socio</th><th>DNI</th><th>Domicilio</th><th>Participaciones</th><th>Numeraci&oacute;n</th><th>% Capital</th><th>Fecha alta</th><th>T&iacute;tulo</th></tr></thead>
+      <tbody>
+        <tr><td>${admin}</td><td>${dni}</td><td>${adminDom}</td><td class="num">${vOr('f_num_part','N. PARTICIPACIONES')}</td><td>1 al ${vOr('f_num_part','N. PARTICIPACIONES')}</td><td class="num">100,00%</td><td>${vOr('f_fecha_const','FECHA DE CONSTITUCION')}</td><td>Fundacional</td></tr>
+      </tbody>
+    </table>
+    <h2>Registro de transmisiones</h2>
+    <p>No se han producido transmisiones de participaciones sociales desde la constituci&oacute;n de la sociedad.</p>
+    <table>
+      <thead><tr><th>Fecha</th><th>Transmitente</th><th>Adquirente</th><th>Participaciones</th><th>T&iacute;tulo</th></tr></thead>
+      <tbody><tr><td colspan="5" style="text-align:center;color:#999;font-style:italic">Sin movimientos</td></tr></tbody>
+    </table>
+    ${isUnipersonal()
+      ? '<p style="font-size:11px;color:#777;margin-top:24px">Sociedad unipersonal. <span class="placeholder">[INDICA SI LA UNIPERSONALIDAD ES ORIGINARIA O SOBREVENIDA]</span>, conforme a la escritura otorgada el ' + fechaConst + '.</p>'
+      : aviso('<strong>Has declarado varios socios.</strong> Esta tabla lista un unico titular con el ' +
+              '100% del capital: rellenala con todos los socios y sus participaciones antes de legalizar nada.')}
+    <div class="signature"><p>El ${vOr('f_cargo','CARGO')}:</p><div class="line"></div><p class="name">Fdo.: ${admin}</p></div>
+  `;
+}
+
+function renderModelo200() {
+  const el = document.getElementById('doc-modelo200');
+  const den = vOr('f_denominacion','DENOMINACION');
+  const cif = vOr('f_cif','CIF');
+  const admin = vOr('f_admin','ADMINISTRADOR');
+  const dni = vOr('f_admin_dni','DNI');
+  const fechaConst = vOr('f_fecha_const','FECHA CONSTITUCION');
+  const vpart = vOr('f_valor_part','VALOR_PARTICIPACIONES');
+  const saldo = vOr('f_saldo','SALDO_BANCO');
+  const capital = vOr('f_capital','CAPITAL');
+  const total = totalActivo();
+  const cnae = vOr('f_cnae','CNAE');
+
+  el.innerHTML = `
+    <h1>GUIA PASO A PASO &mdash; MODELO 200</h1>
+    <div class="doc-subtitle">Impuesto sobre Sociedades &mdash; Ejercicio ${ejercicioTxt()}</div>
+    <div class="doc-meta" style="color:#e17055;font-weight:700">PLAZO: hasta el ${fmtFecha(plazoM200())} (${diasRestantes200()})</div>
+
+    <h2 style="margin-top:28px">QUE ES</h2>
+    <p>El Modelo 200 es la declaracion anual del Impuesto sobre Sociedades. Es <strong>obligatorio presentarlo aunque el resultado sea cero</strong> y no haya cuota a pagar.</p>
+
+    <h2 style="margin-top:28px">DATOS DE LA SOCIEDAD</h2>
+    <table>
+      <tbody>
+        <tr><td style="width:250px;font-weight:600">Denominacion</td><td>${den}</td></tr>
+        <tr><td style="font-weight:600">CIF</td><td>${cif}</td></tr>
+        <tr><td style="font-weight:600">CNAE</td><td>${cnae}</td></tr>
+        <tr><td style="font-weight:600">Inicio ejercicio</td><td>${fechaConst} (fecha constitucion)</td></tr>
+        <tr><td style="font-weight:600">Fin ejercicio</td><td>${cierreCorto()}</td></tr>
+        <tr><td style="font-weight:600">Tipo impositivo</td><td>${tipoISTxt()}</td></tr>
+        <tr><td style="font-weight:600">Resultado del ejercicio</td><td>${vOr('f_resultado','RESULTADO')} EUR</td></tr>
+        <tr><td style="font-weight:600">Cuota a pagar</td><td><span class="placeholder">[LA CALCULA EL FORMULARIO]</span></td></tr>
+      </tbody>
+    </table>
+
+    ${avisoTipoReducido()}
+
+    <h2 style="margin-top:28px">REQUISITOS PREVIOS</h2>
+    <table>
+      <tbody>
+        <tr><td style="width:30px;text-align:center;font-weight:700;color:#6c5ce7">1</td><td><strong>Certificado digital</strong> vigente del administrador (${admin}) o de la sociedad (${cif}), instalado en el navegador</td></tr>
+        <tr><td style="text-align:center;font-weight:700;color:#6c5ce7">2</td><td><strong>Cuentas anuales formuladas</strong> (Balance, PyG, Memoria) &mdash; ya las tienes en esta app</td></tr>
+        <tr><td style="text-align:center;font-weight:700;color:#6c5ce7">3</td><td>Navegador compatible: Chrome o Firefox (recomendado)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:28px">PASO A PASO</h2>
+
+    <h3 style="margin-top:20px;color:#6c5ce7">PASO 1 &mdash; Acceder a la Sede Electronica</h3>
+    <table><tbody>
+      <tr><td style="width:30px;text-align:center;font-weight:700">1.1</td><td>Abre <strong>sede.agenciatributaria.gob.es</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">1.2</td><td>Identif&iacute;cate con <strong>certificado digital</strong> (no vale Cl@ve PIN para sociedades en Modelo 200)</td></tr>
+      <tr><td style="text-align:center;font-weight:700">1.3</td><td>Navega a: <strong>Impuestos y Tasas &gt; Impuesto sobre Sociedades &gt; Modelo 200</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">1.4</td><td>Selecciona <strong>Ejercicio ${ejercicioTxt()}</strong> y pulsa &ldquo;Confeccionar declaracion&rdquo;</td></tr>
+    </tbody></table>
+
+    <h3 style="margin-top:20px;color:#6c5ce7">PASO 2 &mdash; Pagina 1: Datos identificativos</h3>
+    <table><tbody>
+      <tr><td style="width:30px;text-align:center;font-weight:700">2.1</td><td>NIF: <strong>${cif}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">2.2</td><td>Razon social: <strong>${den}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">2.3</td><td>CNAE actividad principal: <strong>${vOr('f_cnae','CNAE')}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">2.4</td><td>Fecha inicio periodo impositivo: <strong>${fechaConst}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">2.5</td><td>Fecha fin periodo impositivo: <strong>${cierreCorto()}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">2.6</td><td>Casilla <strong>&ldquo;Entidad de nueva creacion&rdquo;</strong>: m&aacute;rcala <strong>solo si te corresponde</strong>. No basta con ser reciente &mdash; hay que realizar actividades economicas, y quedan excluidas las entidades patrimoniales y las que forman parte de un grupo. Ver AVISO.md.</td></tr>
+      <tr><td style="text-align:center;font-weight:700">2.7</td><td>Casilla <strong>&ldquo;Microempresa&rdquo;</strong> (art. 101 LIS): ${chk('f_micro') ? 'has declarado que cumples los criterios, marcala' : '<span class="placeholder">[NO la marques sin comprobar los limites: no has marcado esa casilla en el formulario]</span>'}</td></tr>
+    </tbody></table>
+
+    <h3 style="margin-top:20px;color:#6c5ce7">PASO 3 &mdash; Balance</h3>
+    <table><tbody>
+      <tr><td style="width:30px;text-align:center;font-weight:700">3.1</td><td>Activo no corriente &gt; Inversiones en empresas ${grupoOAsoc()}: <strong>${vpart}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">3.2</td><td>Activo corriente &gt; Efectivo: <strong>${saldo}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">3.3</td><td>Total Activo: <strong>${total}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">3.4</td><td>Patrimonio Neto &gt; Capital: <strong>${capital}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">3.5</td><td>Resultado del ejercicio: <strong>${vOr('f_resultado','RESULTADO')}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">3.6</td><td>Pasivo (no corriente + corriente): <strong>${vOr('f_pasivo','PASIVO')}</strong> &mdash; desgl&oacute;salo si tienes deudas con vencimientos distintos</td></tr>
+      <tr><td style="text-align:center;font-weight:700">3.7</td><td>Verificar que Total Activo = Total PN + Pasivo = <strong>${total}</strong></td></tr>
+    </tbody></table>
+
+    <h3 style="margin-top:20px;color:#6c5ce7">PASO 4 &mdash; Cuenta de Perdidas y Ganancias</h3>
+    <table><tbody>
+      <tr><td style="width:30px;text-align:center;font-weight:700">4.1</td><td>Rellena las partidas con <strong>tus</strong> ingresos y gastos. Esta herramienta no los conoce: solo sabe el resultado que has escrito.</td></tr>
+      <tr><td style="text-align:center;font-weight:700">4.2</td><td>Resultado de explotacion: <span class="placeholder">[COMPLETA]</span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">4.3</td><td>Resultado financiero: <span class="placeholder">[COMPLETA]</span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">4.4</td><td>Resultado del ejercicio: <strong>${vOr('f_resultado','RESULTADO')}</strong></td></tr>
+    </tbody></table>
+
+    <h3 style="margin-top:20px;color:#6c5ce7">PASO 5 &mdash; Liquidacion</h3>
+    <table><tbody>
+      <tr><td style="width:30px;text-align:center;font-weight:700">5.1</td><td>Base imponible: <span class="placeholder">[COMPLETA &mdash; es tu resultado contable mas los ajustes fiscales que te correspondan, no el resultado a secas]</span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">5.2</td><td>Tipo impositivo: <strong>${tipoISTxt()}</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">5.3</td><td>Cuota &iacute;ntegra: <span class="placeholder">[LA CALCULA EL FORMULARIO]</span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">5.4</td><td>Cuota l&iacute;quida: <span class="placeholder">[LA CALCULA EL FORMULARIO]</span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">5.5</td><td>Resultado de la declaracion: <span class="placeholder">[LO CALCULA EL FORMULARIO]</span></td></tr>
+    </tbody></table>
+
+    <h3 style="margin-top:20px;color:#6c5ce7">PASO 6 &mdash; Operaciones vinculadas y datos adicionales</h3>
+    <table><tbody>
+      <tr><td style="width:30px;text-align:center;font-weight:700">6.1</td><td>Administradores: indicar <strong>${admin}</strong>, DNI ${dni}, retribucion: 0,00 EUR</td></tr>
+      <tr><td style="text-align:center;font-weight:700">6.2</td><td>Socios con participacion &ge;25%: ${isUnipersonal() ? 'indica los datos del socio unico' : 'indica los datos de <strong>cada</strong> socio que llegue al 25%'}</td></tr>
+      <tr><td style="text-align:center;font-weight:700">6.3</td><td>Operaciones vinculadas: <span class="placeholder">[DECIDELO TU]</span>. Ojo: comprar o vender participaciones de tu filial por mas de 100.000 EUR es operacion especifica y obliga al modelo 232 aunque no llegues a los 250.000.</td></tr>
+      <tr><td style="text-align:center;font-weight:700">6.4</td><td>Personal asalariado medio: <span class="placeholder">[COMPLETA]</span></td></tr>
+    </tbody></table>
+
+    <h3 style="margin-top:20px;color:#6c5ce7">PASO 7 &mdash; Validar, firmar y presentar</h3>
+    <table><tbody>
+      <tr><td style="width:30px;text-align:center;font-weight:700">7.1</td><td>Pulsa <strong>&ldquo;Validar declaracion&rdquo;</strong> &mdash; corrige cualquier error que aparezca</td></tr>
+      <tr><td style="text-align:center;font-weight:700">7.2</td><td>Pulsa <strong>&ldquo;Firmar y presentar&rdquo;</strong></td></tr>
+      <tr><td style="text-align:center;font-weight:700">7.3</td><td>Confirma con el certificado digital</td></tr>
+      <tr><td style="text-align:center;font-weight:700">7.4</td><td>Descarga el <strong>justificante con CSV</strong> (codigo seguro de verificacion)</td></tr>
+      <tr><td style="text-align:center;font-weight:700">7.5</td><td>Guarda el PDF del justificante en la carpeta &ldquo;${v('f_denominacion') || 'SOCIEDAD'} - Cierre ${ejercicioTxt()}&rdquo;</td></tr>
+    </tbody></table>
+
+    <div style="margin-top:32px;padding:16px;background:#f0faf6;border:1px solid #00b894;border-radius:6px">
+      <p style="font-weight:700;margin-bottom:8px;color:#00b894">Resumen r&aacute;pido</p>
+      <p>${parseNum(v('f_resultado')) > 0
+            ? 'Tu resultado es positivo, as&iacute; que <strong>puede haber cuota a pagar</strong>: la calcula el formulario a partir de tu base imponible.'
+            : 'Con resultado cero o negativo normalmente no sale cuota a ingresar, pero <strong>eso lo decide tu base imponible</strong>, no tu resultado contable.'} Se presenta <strong>en todo caso</strong>, aunque salga a cero.</p>
+      <p style="margin-top:8px">Tiempo estimado: <strong>15-20 minutos</strong> si tienes el certificado digital instalado.</p>
+    </div>
+
+    <div style="margin-top:16px;padding:16px;background:#fff8f0;border:1px solid #f0d0a0;border-radius:6px">
+      <p style="font-weight:700;margin-bottom:8px;color:#e17055">Errores comunes a evitar</p>
+      <p>&mdash; No confundir con el Modelo 202 (pago fraccionado) &mdash; tu quieres el <strong>200</strong></p>
+      <p>&mdash; Si tu ejercicio no cubre doce meses, las fechas NO son del 01/01 al 31/12: comprueba el inicio y el fin reales del periodo impositivo (aqu&iacute;, hasta el <strong>${cierreCorto()}</strong>)</p>
+      <p>&mdash; <strong>No marques &ldquo;Entidad de nueva creacion&rdquo; por inercia.</strong> El tipo del 15% excluye a las entidades patrimoniales y a las que forman parte de un grupo: una holding con filial suele estar fuera. Ver AVISO.md, punto 1.</p>
+      <p>&mdash; Si el sistema pide cuenta bancaria (IBAN) para domiciliacion, pon la cuenta de la sociedad aunque la cuota sea 0</p>
+    </div>
+  `;
+}
+
+function renderArchivo() {
+  const el = document.getElementById('doc-archivo');
+  const saved = JSON.parse(localStorage.getItem('cierre_cuentas_checklist') || '{}');
+  const archivoDocs = [
+    { id: 's34', label: `Carpeta "${v('f_denominacion')} - Cierre ${v('f_ejercicio')}" creada` },
+    { id: 's35', label: 'PDFs firmados: Cuentas Anuales, Cert. Formulaci\u00f3n, Acta Socio \u00danico, Cert. Acuerdos' },
+    { id: 's36', label: 'Justificantes: legalizaci\u00f3n libros, dep\u00f3sito RM, tasa RM, Modelo 200' },
+    { id: 's37', label: 'Copia de la escritura de constituci\u00f3n' },
+  ];
+  let rows = archivoDocs.map(d => {
+    const done = saved[d.id] || false;
+    const icon = done ? '<span style="color:#00b894">&#9745;</span>' : '<span style="color:#999">&#9744;</span>';
+    return '<tr><td style="width:30px;text-align:center">' + icon + '</td><td>' + d.label + '</td></tr>';
+  }).join('');
+
+  el.innerHTML = `
+    <h1>FASE 6 &mdash; ARCHIVO DIGITAL</h1>
+    <div class="doc-subtitle">Documentaci&oacute;n final a conservar</div>
+    <div class="doc-meta">Estructura de carpeta recomendada</div>
+    <h2>Contenido de la carpeta</h2>
+    <table><tbody>${rows}</tbody></table>
+    <h2>Estructura recomendada</h2>
+    <div style="font-family:monospace;font-size:13px;background:#f8f8fc;padding:20px;border-radius:6px;line-height:2">
+      ${vOr('f_denominacion','DENOMINACION')} - Cierre ${vOr('f_ejercicio','EJERCICIO')}/<br>
+      &nbsp;&nbsp;01-cuentas-anuales-2025.pdf<br>
+      &nbsp;&nbsp;02-certificado-formulación.pdf<br>
+      &nbsp;&nbsp;03-acta-socio-unico.pdf<br>
+      &nbsp;&nbsp;04-certificado-acuerdos.pdf<br>
+      &nbsp;&nbsp;05-libro-diario.pdf<br>
+      &nbsp;&nbsp;06-libro-inventarios.pdf<br>
+      &nbsp;&nbsp;07-libro-actas.pdf<br>
+      &nbsp;&nbsp;08-libro-registro-socios.pdf<br>
+      &nbsp;&nbsp;09-justificante-legalización-libros.pdf<br>
+      &nbsp;&nbsp;10-justificante-depósito-rm.pdf<br>
+      &nbsp;&nbsp;11-recibo-tasa-rm.pdf<br>
+      &nbsp;&nbsp;12-justificante-modelo-200.pdf<br>
+      &nbsp;&nbsp;13-escritura-constitución.pdf<br>
+    </div>
+  `;
+}
+
+function toggleStep(id) {
+  const saved = JSON.parse(localStorage.getItem('cierre_cuentas_checklist') || '{}');
+  saved[id] = !saved[id];
+  localStorage.setItem('cierre_cuentas_checklist', JSON.stringify(saved));
+  renderRuta();
+  renderChecklist();
+}
+
+// --- Navigation ---
+const phaseMap = {
+  ruta: [{ id: 'ruta', label: 'Hoja de Ruta' }],
+  f1: [{ id: 'cuentas', label: 'Cuentas Anuales' }, { id: 'cert-form', label: 'Cert. Formulaci\u00f3n' }],
+  f2: [{ id: 'acta', label: 'Acta Socio \u00danico' }],
+  f3: [{ id: 'libro-diario', label: 'Libro Diario' }, { id: 'libro-inventarios', label: 'Libro Inventarios' }, { id: 'libro-actas', label: 'Libro Actas' }, { id: 'libro-socios', label: 'Libro Reg. Socios' }],
+  f4: [{ id: 'cert-acuerdos', label: 'Cert. Acuerdos' }],
+  f5: [{ id: 'modelo200', label: 'Modelo 200' }],
+  f6: [{ id: 'archivo', label: 'Archivo Digital' }],
+};
+
+let activePhase = 'ruta';
+let activeDoc = 'ruta';
+
+function showDoc(docId) {
+  activeDoc = docId;
+  document.querySelectorAll('.doc-page').forEach(p => p.classList.add('hidden'));
+  document.getElementById('doc-' + docId).classList.remove('hidden');
+  // Update doc tab active state
+  document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
+  const activeBtn = document.querySelector(`.doc-tab[data-doc="${docId}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+const docStepMap = {
+  'cuentas': 's2', 'cert-form': 's4', 'acta': 's5',
+  'libro-diario': 's7', 'libro-inventarios': 's8', 'libro-actas': 's9', 'libro-socios': 's10',
+  'cert-acuerdos': 's20',
+};
+const noDownload = ['ruta', 'modelo200', 'archivo'];
+
+function renderSubNav(phase, keepDoc) {
+  const navDocs = document.getElementById('navDocs');
+  const docs = phaseMap[phase] || [];
+  const saved = JSON.parse(localStorage.getItem('cierre_cuentas_checklist') || '{}');
+  const currentDoc = keepDoc || activeDoc;
+
+  navDocs.innerHTML = docs.map((d) => {
+    const isActive = d.id === currentDoc;
+    const stepId = docStepMap[d.id];
+    const done = stepId ? (saved[stepId] || false) : false;
+    const checkIcon = done ? '&#9745;' : '&#9744;';
+    const checkColor = done ? 'color:var(--green)' : 'color:var(--text2)';
+    const checkBtn = stepId
+      ? `<span style="cursor:pointer;font-size:15px;${checkColor};margin-left:6px;vertical-align:middle" onclick="toggleStepInPlace('${stepId}')" title="${done ? 'Hecho' : 'Marcar como hecho'}">${checkIcon}</span>`
+      : '';
+
+    if (noDownload.includes(d.id)) {
+      return `<button class="doc-tab ${isActive ? 'active' : ''}" data-doc="${d.id}" onclick="showDoc('${d.id}')">${d.label}</button>`;
+    }
+    return `<span class="doc-btn-group"><button class="doc-tab ${isActive ? 'active' : ''}" data-doc="${d.id}" onclick="showDoc('${d.id}')">${d.label}</button><button class="doc-download" onclick="downloadDoc('${d.id}','${d.label}')" title="Descargar PDF">&darr;</button></span>${checkBtn}`;
+  }).join(' ');
+}
+
+function toggleStepInPlace(id) {
+  const saved = JSON.parse(localStorage.getItem('cierre_cuentas_checklist') || '{}');
+  saved[id] = !saved[id];
+  localStorage.setItem('cierre_cuentas_checklist', JSON.stringify(saved));
+  renderSubNav(activePhase, activeDoc);
+  renderRuta();
+  renderChecklist();
+}
+
+function showPhase(phase) {
+  activePhase = phase;
+  document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
+  const activeP = document.querySelector(`.phase-tab[data-phase="${phase}"]`);
+  if (activeP) activeP.classList.add('active');
+  const docs = phaseMap[phase] || [];
+  renderSubNav(phase, docs[0].id);
+  showDoc(docs[0].id);
+}
+
+document.querySelectorAll('.phase-tab').forEach(tab => {
+  tab.addEventListener('click', () => showPhase(tab.dataset.phase));
+});
+
+// --- Progress ---
+function updateProgress() {
+  const required = document.querySelectorAll('[data-required]');
+  let filled = 0;
+  required.forEach(el => {
+    if (el.value.trim()) {
+      filled++;
+      el.classList.add('filled');
+      el.classList.remove('missing');
+    } else {
+      el.classList.remove('filled');
+    }
+  });
+  const pct = Math.round((filled / required.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${filled} / ${required.length} campos — ${pct}%`;
+
+  if (filled === required.length) {
+    document.getElementById('alertMissing').classList.add('hidden');
+    document.getElementById('alertReady').classList.remove('hidden');
+  } else {
+    document.getElementById('alertMissing').classList.remove('hidden');
+    document.getElementById('alertReady').classList.add('hidden');
+  }
+}
+
+// --- Print ---
+function pdfOptions(filename) {
+  return {
+    margin: [15, 15, 15, 15],
+    filename: filename + '.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true,
+      // Los avisos dicen "esto no sale en el PDF". Antes era mentira: no habia
+      // nada que los excluyera del export. Ahora si.
+      ignoreElements: el => el.classList && el.classList.contains('no-pdf') },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+}
+
+function printDoc() {
+  // Download the currently visible doc
+  const visible = document.querySelector('.doc-page:not(.hidden)');
+  if (!visible) return;
+  const name = visible.id.replace('doc-', '');
+  html2pdf().set(pdfOptions('CUENTAS_' + name)).from(visible).save();
+}
+
+function downloadDoc(docId, label) {
+  const target = document.getElementById('doc-' + docId);
+  if (!target) return;
+  const filename = 'CUENTAS_' + label.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]/g, '').replace(/ +/g, '_');
+  html2pdf().set(pdfOptions(filename)).from(target).save();
+}
+
+// --- Checklist (legacy, replaced by persistent version) ---
+
+// Init
+render();
+updateProgress();
+checkBalance();
+showPhase('ruta');
+</script>
+</body>
+</html>
